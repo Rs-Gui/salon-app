@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SalãoApp · Agenda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     AGENDA · Paleta BRUMA (cinza neutro claro)
+     Recriação fiel da tela de agendamentos atual do app.
+     =========================================================== */
+  :root{
+    --bg:        #F4F4F3;
+    --surface:   #FFFFFF;
+    --surface-2: #ECECEB;
+    --ink:       #28282A;
+    --ink-soft:  #6E6E72;
+    --line:      #E5E5E3;
+    --line-soft: #EFEFED;
+    --accent:    #A89A93;
+    --accent-deep:#8A7C75;
+    --accent-soft:#EAE5E2;
+    --graphite:  #38383B;
+    --radius:    18px;
+    --shadow:    0 18px 40px -26px rgba(40,40,42,.30);
+    --slot:      30px;   /* altura de 30 min, igual ao app */
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Hanken Grotesk',system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;height:100vh;overflow:hidden;
+  }
+  .serif{font-family:'Fraunces',Georgia,serif}
+
+  /* ---------- HEADER ---------- */
+  header.topbar{
+    display:flex;align-items:center;gap:24px;padding:18px 32px;
+    background:rgba(244,244,243,.9);border-bottom:1px solid var(--line);flex-shrink:0;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand .mark{font-family:'Fraunces',serif;font-weight:600;font-size:24px;color:var(--ink)}
+  .brand .mark em{color:var(--accent-deep);font-style:italic}
+  .brand .tag{font-size:11px;text-transform:uppercase;letter-spacing:.28em;color:var(--ink-soft)}
+  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:18px}
+  .date-pill{font-size:13px;color:var(--ink-soft)}
+  .date-pill b{color:var(--ink);font-weight:600}
+  .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--graphite));display:grid;place-items:center;color:#fff;font-weight:600;font-size:14px;box-shadow:var(--shadow)}
+
+  /* ---------- SHELL ---------- */
+  .shell{display:flex;flex:1;min-height:0}
+  aside{width:248px;flex-shrink:0;padding:26px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--bg)}
+  .nav-label{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:#a7a7a9;padding:0 14px;margin-bottom:12px}
+  nav{display:flex;flex-direction:column;gap:2px}
+  .nav-item{display:flex;align-items:center;gap:13px;padding:11px 14px;border-radius:12px;color:var(--ink-soft);font-weight:500;font-size:14.5px;text-decoration:none;transition:.18s}
+  .nav-item svg{width:19px;height:19px;flex-shrink:0;opacity:.8}
+  .nav-item:hover{background:var(--surface-2);color:var(--ink)}
+  .nav-item.active{background:var(--graphite);color:#fff;box-shadow:var(--shadow)}
+  .nav-item.active svg{opacity:1}
+  .nav-item .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  aside .foot{margin-top:auto;padding-top:18px;border-top:1px solid var(--line)}
+  .logout{display:flex;align-items:center;gap:13px;padding:11px 14px;color:var(--ink-soft);font-size:14px;text-decoration:none;border-radius:12px}
+  .logout:hover{background:var(--surface-2);color:var(--accent-deep)}
+
+  /* ---------- MAIN ---------- */
+  main{flex:1;overflow:hidden;padding:28px 32px 0;display:flex;flex-direction:column}
+  .page-title{font-family:'Fraunces',serif;font-weight:500;font-size:26px;margin-bottom:16px;letter-spacing:-.3px}
+
+  /* ---------- TOOLBAR ---------- */
+  .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px}
+  .nav-btn{width:38px;height:38px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;cursor:pointer;font-size:15px;transition:.15s;text-decoration:none}
+  .nav-btn:hover{background:var(--surface-2)}
+  .date-input{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px;color:var(--ink)}
+  .date-input svg{color:var(--accent-deep)}
+  .date-label{font-weight:600;font-size:15px;color:var(--ink)}
+  .btn-primary{margin-left:auto;display:inline-flex;align-items:center;gap:8px;background:var(--graphite);color:#fff;border:none;border-radius:10px;padding:10px 18px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+  .btn-primary:hover{background:#222225}
+
+  /* ---------- CALENDÁRIO ---------- */
+  .calwrap{flex:1;min-height:0;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 1px 0 rgba(0,0,0,.01)}
+  /* scrollbar cinza */
+  .calwrap{scrollbar-width:thin;scrollbar-color:#cfcfcd var(--surface-2)}
+  .calwrap::-webkit-scrollbar{width:10px;height:10px}
+  .calwrap::-webkit-scrollbar-track{background:var(--surface-2)}
+  .calwrap::-webkit-scrollbar-thumb{background:#cfcfcd;border-radius:6px;border:2px solid var(--surface-2)}
+  .calwrap::-webkit-scrollbar-thumb:hover{background:#b7b7b4}
+  .grid{display:flex;min-width:max-content}
+
+  .col-time{width:62px;flex-shrink:0;border-right:1px solid var(--line)}
+  .col{flex:1;min-width:150px;border-right:1px solid var(--line)}
+  .col:last-child{border-right:none}
+  .head{height:42px;position:sticky;top:0;z-index:10;background:var(--surface-2);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 12px}
+  .col-time .head{background:var(--surface-2)}
+  .head .pname{font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .head .pname .role{display:block;font-size:10.5px;font-weight:500;color:var(--ink-soft);letter-spacing:.02em}
+  .head .grab{margin-left:auto;color:#c2c2bf}
+
+  .track{position:relative;height:720px}  /* 24 slots de 30px = 08:00–20:00 */
+  /* linhas de hora cheia / meia hora */
+  .hr{position:absolute;left:0;right:0;border-top:1px solid var(--line);height:var(--slot)}
+  .hr.half{border-top:1px solid var(--line-soft)}
+  .col-time .hr{padding-left:8px}
+  .col-time .hr span{font-size:11px;color:var(--ink-soft);position:relative;top:-7px}
+  .col-time .hr.half span{font-size:10px;color:#c2c2bf}
+
+  /* bloco de agendamento */
+  .appt{position:absolute;left:5px;right:5px;background:var(--surface-2);border-left:3px solid var(--graphite);border-radius:7px;padding:5px 8px;overflow:hidden;cursor:pointer;z-index:5;transition:.13s}
+  .appt:hover{background:#E3E3E1;box-shadow:var(--shadow)}
+  .appt .t{font-weight:700;font-size:12px;color:var(--ink);line-height:1.1}
+  .appt .c{font-size:12.5px;color:var(--ink);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .appt .s{font-size:11px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  /* bloco curto (<30min) */
+  .appt.short{padding:3px 8px}
+  .appt.short .line{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .appt.short .line b{font-weight:700}
+  .legend{display:flex;align-items:center;gap:18px;padding:12px 2px 18px;font-size:12px;color:var(--ink-soft)}
+  .legend .it{display:flex;align-items:center;gap:7px}
+  .legend .sw{width:22px;height:12px;border-radius:3px}
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark">Salão<em>App</em></span>
+      <span class="tag">Gestão do salão</span>
+    </div>
+    <div class="right">
+      <div class="date-pill">Sábado, <b>7 de junho</b></div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside>
+      <div class="nav-label">Menu</div>
+      <nav>
+        <a class="nav-item active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Agendamentos <span class="dot"></span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg> Clientes</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg> Profissionais</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg> Serviços</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18l-1.5 12.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5z"/><path d="M8 7a4 4 0 0 1 8 0"/></svg> Produtos</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg> Financeiro</a>
+      </nav>
+      <div class="foot">
+        <a class="logout" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Sair</a>
+      </div>
+    </aside>
+
+    <main>
+      <div class="page-title">Agenda</div>
+
+      <!-- TOOLBAR -->
+      <div class="toolbar">
+        <a class="nav-btn" href="#" aria-label="Dia anterior">←</a>
+        <a class="nav-btn" href="#" aria-label="Próximo dia">→</a>
+        <div class="date-input">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          07/06/2026
+        </div>
+        <span class="date-label">Sábado, 7 de junho de 2026</span>
+        <button class="btn-primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg> Novo agendamento</button>
+      </div>
+
+      <!-- CALENDÁRIO -->
+      <div class="calwrap">
+        <div class="grid">
+
+          <!-- Coluna de horários -->
+          <div class="col-time">
+            <div class="head"></div>
+            <div class="track">
+              <div class="hr"      style="top:0px"><span>08:00</span></div>
+              <div class="hr half" style="top:30px"><span>08:30</span></div>
+              <div class="hr"      style="top:60px"><span>09:00</span></div>
+              <div class="hr half" style="top:90px"><span>09:30</span></div>
+              <div class="hr"      style="top:120px"><span>10:00</span></div>
+              <div class="hr half" style="top:150px"><span>10:30</span></div>
+              <div class="hr"      style="top:180px"><span>11:00</span></div>
+              <div class="hr half" style="top:210px"><span>11:30</span></div>
+              <div class="hr"      style="top:240px"><span>12:00</span></div>
+              <div class="hr half" style="top:270px"><span>12:30</span></div>
+              <div class="hr"      style="top:300px"><span>13:00</span></div>
+              <div class="hr half" style="top:330px"><span>13:30</span></div>
+              <div class="hr"      style="top:360px"><span>14:00</span></div>
+              <div class="hr half" style="top:390px"><span>14:30</span></div>
+              <div class="hr"      style="top:420px"><span>15:00</span></div>
+              <div class="hr half" style="top:450px"><span>15:30</span></div>
+              <div class="hr"      style="top:480px"><span>16:00</span></div>
+              <div class="hr half" style="top:510px"><span>16:30</span></div>
+              <div class="hr"      style="top:540px"><span>17:00</span></div>
+              <div class="hr half" style="top:570px"><span>17:30</span></div>
+              <div class="hr"      style="top:600px"><span>18:00</span></div>
+              <div class="hr half" style="top:630px"><span>18:30</span></div>
+              <div class="hr"      style="top:660px"><span>19:00</span></div>
+              <div class="hr half" style="top:690px"><span>19:30</span></div>
+            </div>
+          </div>
+
+          <!-- Carla -->
+          <div class="col">
+            <div class="head"><span class="pname">Carla Bianchi<span class="role">Cabeleireira</span></span><span class="grab">⠿</span></div>
+            <div class="track">
+              <div class="hr" style="top:0"></div><div class="hr half" style="top:30px"></div><div class="hr" style="top:60px"></div><div class="hr half" style="top:90px"></div><div class="hr" style="top:120px"></div><div class="hr half" style="top:150px"></div><div class="hr" style="top:180px"></div><div class="hr half" style="top:210px"></div><div class="hr" style="top:240px"></div><div class="hr half" style="top:270px"></div><div class="hr" style="top:300px"></div><div class="hr half" style="top:330px"></div><div class="hr" style="top:360px"></div><div class="hr half" style="top:390px"></div><div class="hr" style="top:420px"></div><div class="hr half" style="top:450px"></div><div class="hr" style="top:480px"></div><div class="hr half" style="top:510px"></div><div class="hr" style="top:540px"></div><div class="hr half" style="top:570px"></div><div class="hr" style="top:600px"></div><div class="hr half" style="top:630px"></div><div class="hr" style="top:660px"></div><div class="hr half" style="top:690px"></div>
+              <!-- 09:00 60min -->
+              <div class="appt" style="top:60px;height:58px"><div class="t">09:00</div><div class="c">Marina Costa</div><div class="s">Corte + Escova</div></div>
+              <!-- 11:00 90min destaque -->
+              <div class="appt" style="top:180px;height:88px"><div class="t">11:00</div><div class="c">Fernanda Dias</div><div class="s">Coloração + Hidratação</div></div>
+              <!-- 14:00 60min -->
+              <div class="appt" style="top:360px;height:58px"><div class="t">14:00</div><div class="c">Helena Martins</div><div class="s">Corte + Escova</div></div>
+              <!-- 17:30 45min -->
+              <div class="appt" style="top:570px;height:43px"><div class="t">17:30</div><div class="c">Sofia Andrade</div><div class="s">Escova</div></div>
+            </div>
+          </div>
+
+          <!-- Renata -->
+          <div class="col">
+            <div class="head"><span class="pname">Renata Souza<span class="role">Colorista</span></span><span class="grab">⠿</span></div>
+            <div class="track">
+              <div class="hr" style="top:0"></div><div class="hr half" style="top:30px"></div><div class="hr" style="top:60px"></div><div class="hr half" style="top:90px"></div><div class="hr" style="top:120px"></div><div class="hr half" style="top:150px"></div><div class="hr" style="top:180px"></div><div class="hr half" style="top:210px"></div><div class="hr" style="top:240px"></div><div class="hr half" style="top:270px"></div><div class="hr" style="top:300px"></div><div class="hr half" style="top:330px"></div><div class="hr" style="top:360px"></div><div class="hr half" style="top:390px"></div><div class="hr" style="top:420px"></div><div class="hr half" style="top:450px"></div><div class="hr" style="top:480px"></div><div class="hr half" style="top:510px"></div><div class="hr" style="top:540px"></div><div class="hr half" style="top:570px"></div><div class="hr" style="top:600px"></div><div class="hr half" style="top:630px"></div><div class="hr" style="top:660px"></div><div class="hr half" style="top:690px"></div>
+              <!-- 09:30 120min -->
+              <div class="appt" style="top:90px;height:118px"><div class="t">09:30</div><div class="c">Patrícia Lemos</div><div class="s">Mechas + Matização</div></div>
+              <!-- 13:00 30min curto -->
+              <div class="appt short" style="top:300px;height:28px"><div class="line"><b>13:00</b> · Letícia Alves</div></div>
+              <!-- 15:00 90min -->
+              <div class="appt" style="top:420px;height:88px"><div class="t">15:00</div><div class="c">Camila Rocha</div><div class="s">Coloração</div></div>
+            </div>
+          </div>
+
+          <!-- Aline -->
+          <div class="col">
+            <div class="head"><span class="pname">Aline Ferreira<span class="role">Manicure</span></span><span class="grab">⠿</span></div>
+            <div class="track">
+              <div class="hr" style="top:0"></div><div class="hr half" style="top:30px"></div><div class="hr" style="top:60px"></div><div class="hr half" style="top:90px"></div><div class="hr" style="top:120px"></div><div class="hr half" style="top:150px"></div><div class="hr" style="top:180px"></div><div class="hr half" style="top:210px"></div><div class="hr" style="top:240px"></div><div class="hr half" style="top:270px"></div><div class="hr" style="top:300px"></div><div class="hr half" style="top:330px"></div><div class="hr" style="top:360px"></div><div class="hr half" style="top:390px"></div><div class="hr" style="top:420px"></div><div class="hr half" style="top:450px"></div><div class="hr" style="top:480px"></div><div class="hr half" style="top:510px"></div><div class="hr" style="top:540px"></div><div class="hr half" style="top:570px"></div><div class="hr" style="top:600px"></div><div class="hr half" style="top:630px"></div><div class="hr" style="top:660px"></div><div class="hr half" style="top:690px"></div>
+              <!-- 10:00 45min -->
+              <div class="appt" style="top:120px;height:43px"><div class="t">10:00</div><div class="c">Bianca Reis</div><div class="s">Manicure</div></div>
+              <!-- 11:15 75min -->
+              <div class="appt" style="top:195px;height:73px"><div class="t">11:15</div><div class="c">Júlia Nunes</div><div class="s">Manicure + Pedicure</div></div>
+              <!-- 16:00 60min -->
+              <div class="appt" style="top:480px;height:58px"><div class="t">16:00</div><div class="c">Tatiane Melo</div><div class="s">Pedicure + Spa</div></div>
+            </div>
+          </div>
+
+          <!-- Bruno (inativo exemplo) -->
+          <div class="col">
+            <div class="head"><span class="pname">Bruno Tavares<span class="role">Barbeiro</span></span><span class="grab">⠿</span></div>
+            <div class="track">
+              <div class="hr" style="top:0"></div><div class="hr half" style="top:30px"></div><div class="hr" style="top:60px"></div><div class="hr half" style="top:90px"></div><div class="hr" style="top:120px"></div><div class="hr half" style="top:150px"></div><div class="hr" style="top:180px"></div><div class="hr half" style="top:210px"></div><div class="hr" style="top:240px"></div><div class="hr half" style="top:270px"></div><div class="hr" style="top:300px"></div><div class="hr half" style="top:330px"></div><div class="hr" style="top:360px"></div><div class="hr half" style="top:390px"></div><div class="hr" style="top:420px"></div><div class="hr half" style="top:450px"></div><div class="hr" style="top:480px"></div><div class="hr half" style="top:510px"></div><div class="hr" style="top:540px"></div><div class="hr half" style="top:570px"></div><div class="hr" style="top:600px"></div><div class="hr half" style="top:630px"></div><div class="hr" style="top:660px"></div><div class="hr half" style="top:690px"></div>
+              <!-- 08:30 45min -->
+              <div class="appt" style="top:30px;height:43px"><div class="t">08:30</div><div class="c">Rafael Pinto</div><div class="s">Barba + Corte</div></div>
+              <!-- 10:30 30min curto -->
+              <div class="appt short" style="top:150px;height:28px"><div class="line"><b>10:30</b> · Diego Alves</div></div>
+              <!-- 13:30 60min muted -->
+              <div class="appt" style="top:330px;height:58px"><div class="t">13:30</div><div class="c">Gustavo Lima</div><div class="s">Corte</div></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="it"><span class="sw" style="background:var(--surface-2);border-left:3px solid var(--graphite)"></span> Agendamento</div>
+        <div class="it" style="margin-left:auto">⠿ arraste o cabeçalho para reordenar profissionais</div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

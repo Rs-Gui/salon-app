@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SalãoApp · Entrar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     AUTH · LOGIN · Paleta BRUMA
+     Tela de acesso enxuta (herda base_auth.html no app — SEM
+     sidebar). Marca SalãoApp + card central com campos
+     Nome de usuário / Senha e botão Entrar (largura total).
+     =========================================================== */
+  :root{
+    --bg:        #F4F4F3;
+    --surface:   #FFFFFF;
+    --surface-2: #ECECEB;
+    --ink:       #28282A;
+    --ink-soft:  #6E6E72;
+    --line:      #E5E5E3;
+    --line-soft: #EFEFED;
+    --accent:    #A89A93;
+    --accent-deep:#8A7C75;
+    --accent-soft:#EAE5E2;
+    --graphite:  #38383B;
+    --radius:    18px;
+    --shadow:    0 18px 40px -26px rgba(40,40,42,.30);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Hanken Grotesk',system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:32px;
+  }
+  .serif{font-family:'Fraunces',Georgia,serif}
+
+  /* ---------- MARCA ---------- */
+  .auth-brand{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:26px}
+  .auth-brand .mark{font-family:'Fraunces',serif;font-weight:600;font-size:34px;color:var(--ink);letter-spacing:-.5px}
+  .auth-brand .mark em{color:var(--accent-deep);font-style:italic}
+  .auth-brand .tag{font-size:11px;text-transform:uppercase;letter-spacing:.28em;color:var(--ink-soft)}
+
+  /* ---------- CARD ---------- */
+  .auth-card{
+    width:100%;max-width:420px;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:34px 32px;text-align:center;
+  }
+  .auth-card .field{text-align:left}
+  .auth-card label.lbl{text-align:center}
+  .auth-card h1{font-family:'Fraunces',serif;font-weight:500;font-size:25px;letter-spacing:-.4px;line-height:1.1}
+  .auth-card .sub{font-size:13.5px;color:var(--ink-soft);margin-top:6px;line-height:1.5}
+  .auth-card form{margin-top:24px}
+
+  /* ---------- CAMPOS (padrão Bruma) ---------- */
+  .field{margin-bottom:18px}
+  label.lbl{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:7px}
+  .control{
+    width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;
+    padding:11px 14px;font:inherit;font-size:14.5px;color:var(--ink);transition:.15s;
+  }
+  .control::placeholder{color:#a7a7a9}
+  .control:focus{outline:none;background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+  /* ---------- BOTÃO ---------- */
+  .btn-primary{
+    width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--graphite);color:#fff;border:none;border-radius:10px;
+    padding:13px 18px;font:inherit;font-size:14.5px;font-weight:600;cursor:pointer;
+    box-shadow:var(--shadow);transition:.15s;margin-top:6px;
+  }
+  .btn-primary:hover{background:#222225}
+
+  /* ---------- BANNER DE ERRO ---------- */
+  .alert-error{
+    display:flex;align-items:flex-start;gap:10px;background:#F6ECEA;
+    border:1px solid #E4CCC7;color:#7d5049;border-radius:11px;
+    padding:11px 14px;font-size:13.5px;margin-bottom:20px;line-height:1.45;
+  }
+  .alert-error svg{flex-shrink:0;margin-top:1px}
+
+  .auth-foot{font-size:12px;color:#a7a7a9;text-align:center;margin-top:22px}
+</style>
+</head>
+<body>
+  <div class="auth-brand">
+    <span class="mark">Salão<em>App</em></span>
+    <span class="tag">Gestão do salão</span>
+  </div>
+
+  <div class="auth-card">
+    <h1 class="serif">Entrar</h1>
+    <p class="sub">Acesse o painel do salão com suas credenciais.</p>
+
+    <!-- ============================================================
+         BANNER DE ERRO (referência — renderizar em falha de login):
+
+         <div class="alert-error">
+           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+           <span>Nome de usuário ou senha incorretos.</span>
+         </div>
+    ============================================================ -->
+
+    <form>
+      <div class="field">
+        <label class="lbl">Nome de usuário</label>
+        <input class="control" type="text" name="username" autocomplete="username" autofocus />
+      </div>
+
+      <div class="field">
+        <label class="lbl">Senha</label>
+        <input class="control" type="password" name="password" autocomplete="current-password" />
+      </div>
+
+      <button class="btn-primary" type="submit">Entrar</button>
+    </form>
+  </div>
+
+  <p class="auth-foot">SalãoApp · Acesso restrito à equipe</p>
+</body>
+</html>

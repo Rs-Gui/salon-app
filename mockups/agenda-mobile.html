@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SalãoApp · Agenda no celular</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     AGENDA NO CELULAR · Paleta BRUMA
+     Escopo mobile: só Login + Agenda (ver e marcar). A grade
+     profissional×hora do desktop vira UMA linha do tempo vertical
+     por profissional (troca por chips). Hora na trilha em Fraunces;
+     linha "agora" em taupe; altura do bloco = duração; sheets de
+     baixo p/ marcar e ver atendimento (reusam o form existente).
+     =========================================================== */
+  :root{
+    --bg:        #F4F4F3;
+    --surface:   #FFFFFF;
+    --surface-2: #ECECEB;
+    --ink:       #28282A;
+    --ink-soft:  #6E6E72;
+    --line:      #E5E5E3;
+    --line-soft: #EFEFED;
+    --accent:    #A89A93;
+    --accent-deep:#8A7C75;
+    --accent-soft:#EAE5E2;
+    --graphite:  #38383B;
+    --radius:    18px;
+    --shadow:    0 18px 40px -26px rgba(40,40,42,.30);
+    --ppm:       1.6;   /* px por minuto na timeline (30min = 48px) */
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Hanken Grotesk',system-ui,sans-serif;
+    background:#E4E4E2;color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(circle at 50% 0,#EFEFEE,#DCDCDA);
+    min-height:100vh;padding:42px 20px 64px;
+  }
+  .serif{font-family:'Fraunces',Georgia,serif}
+
+  /* ---------- bancada ---------- */
+  .stage{max-width:920px;margin:0 auto}
+  .stage-head{text-align:center;margin-bottom:38px}
+  .stage-head h1{font-family:'Fraunces',serif;font-weight:500;font-size:26px;letter-spacing:-.4px}
+  .stage-head p{color:var(--ink-soft);font-size:14px;margin-top:8px;line-height:1.55}
+  .frames{display:flex;flex-wrap:wrap;gap:48px;justify-content:center;align-items:flex-start}
+  .frame-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .frame-cap{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+  .frame-cap em{font-style:normal;color:var(--accent-deep)}
+
+  /* ---------- moldura de celular ---------- */
+  .device{
+    width:384px;height:812px;border-radius:46px;background:#1c1c1e;
+    padding:13px;box-shadow:0 50px 90px -40px rgba(28,28,30,.65),0 0 0 1px rgba(0,0,0,.04);
+    position:relative;flex-shrink:0;
+  }
+  .screen{
+    position:relative;width:100%;height:100%;border-radius:34px;overflow:hidden;
+    background:var(--bg);display:flex;flex-direction:column;
+  }
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:128px;height:26px;background:#1c1c1e;border-radius:0 0 16px 16px;z-index:60}
+  .statusbar{height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 24px;font-size:12.5px;font-weight:600;color:var(--ink)}
+  .statusbar .dots{display:flex;align-items:center;gap:5px;color:var(--ink)}
+  .statusbar .dots svg{display:block}
+
+  /* =========================================================
+     TELA · LOGIN (mobile)
+     ========================================================= */
+  .login{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 26px;text-align:center}
+  .login .brand{margin-bottom:28px}
+  .login .brand .mark{font-family:'Fraunces',serif;font-weight:600;font-size:34px;letter-spacing:-.5px;color:var(--ink)}
+  .login .brand .mark em{color:var(--accent-deep);font-style:italic}
+  .login .brand .tag{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.28em;color:var(--ink-soft);margin-top:8px}
+  .login h2{font-family:'Fraunces',serif;font-weight:500;font-size:22px}
+  .login .sub{font-size:13.5px;color:var(--ink-soft);margin:6px 0 22px;line-height:1.5}
+  .login .field{width:100%;text-align:left;margin-bottom:16px}
+  .login label{display:block;font-size:13px;font-weight:600;margin-bottom:7px}
+  .login .control{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 15px;font:inherit;font-size:15px;color:var(--ink);transition:.15s}
+  .login .control:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .login .enter{width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--graphite);color:#fff;border:none;border-radius:12px;padding:15px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;box-shadow:var(--shadow)}
+  .login .foot{font-size:11.5px;color:#a7a7a9;margin-top:26px}
+
+  /* =========================================================
+     TELA · AGENDA (mobile)
+     ========================================================= */
+  .app{flex:1;display:flex;flex-direction:column;min-height:0}
+
+  /* topo: marca + sair */
+  .m-top{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:6px 18px 10px}
+  .m-top .mark{font-family:'Fraunces',serif;font-weight:600;font-size:20px;color:var(--ink)}
+  .m-top .mark em{color:var(--accent-deep);font-style:italic}
+  .iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--ink-soft);cursor:pointer}
+  .iconbtn:active{background:var(--surface-2)}
+
+  /* barra de data */
+  .m-datebar{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:0 16px 12px}
+  .daynav{width:42px;height:42px;border-radius:13px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--ink);cursor:pointer;font-size:18px;flex-shrink:0}
+  .daynav:active{background:var(--surface-2)}
+  .daypick{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;height:42px;border-radius:13px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+  .daypick .d{font-family:'Fraunces',serif;font-weight:500;font-size:15.5px;color:var(--ink);line-height:1}
+  .daypick .w{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+  .today-btn{flex-shrink:0;height:42px;padding:0 14px;border-radius:13px;border:1px solid var(--line);background:var(--surface);color:var(--accent-deep);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+
+  /* chips de profissional */
+  .pros{flex-shrink:0;position:relative}
+  .pros-scroll{display:flex;gap:8px;overflow-x:auto;padding:2px 16px 14px;scroll-snap-type:x proximity;-ms-overflow-style:none;scrollbar-width:none}
+  .pros-scroll::-webkit-scrollbar{display:none}
+  .chip{scroll-snap-align:start;flex-shrink:0;display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-size:14px;font-weight:600;cursor:pointer;transition:.13s}
+  .chip .n{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--surface-2);color:var(--ink-soft);font-size:11.5px;font-weight:700}
+  .chip.on{background:var(--graphite);color:#fff;border-color:var(--graphite);box-shadow:var(--shadow)}
+  .chip.on .n{background:rgba(255,255,255,.16);color:#fff}
+  .chip.off{font-style:italic;color:#a7a7a9}
+  /* fade nas bordas do scroll de chips */
+  .pros::after{content:"";position:absolute;top:0;right:0;width:26px;height:100%;pointer-events:none;background:linear-gradient(90deg,rgba(244,244,243,0),var(--bg))}
+
+  /* timeline */
+  .tlwrap{flex:1;min-height:0;overflow-y:auto;position:relative;background:var(--surface);border-top:1px solid var(--line);scrollbar-width:thin;scrollbar-color:#cfcfcd var(--surface)}
+  .tlwrap::-webkit-scrollbar{width:0}
+  .timeline{position:relative;padding:14px 0 120px}
+  .rail{position:absolute;left:0;top:14px;width:54px}
+  .hourmark{position:absolute;left:0;width:54px;text-align:right;padding-right:12px}
+  .hourmark .h{font-family:'Fraunces',serif;font-size:17px;font-weight:400;color:var(--ink-soft);line-height:1;transform:translateY(-9px)}
+  .gridline{position:absolute;left:54px;right:14px;border-top:1px solid var(--line-soft)}
+  .gridline.full{border-top-color:var(--line)}
+  .track{position:relative;margin-left:54px;margin-right:14px}
+
+  /* área tocável de horário livre */
+  .freehint{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:center;color:transparent;font-size:12.5px;font-weight:600;border-radius:12px;cursor:pointer;transition:.13s}
+  .freehint:active,.freehint:hover{background:var(--accent-soft);color:var(--accent-deep)}
+  .freehint span{pointer-events:none}
+
+  /* bloco de atendimento — altura = duração */
+  .appt{position:absolute;left:4px;right:0;background:var(--surface-2);border-left:3px solid var(--graphite);border-radius:10px;padding:9px 12px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;justify-content:center;transition:.13s}
+  .appt:active{background:#E3E3E1}
+  .appt .at{font-family:'Fraunces',serif;font-weight:600;font-size:12.5px;color:var(--accent-deep);line-height:1;margin-bottom:3px}
+  .appt .ac{font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .appt .as{font-size:12.5px;color:var(--ink-soft);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .appt.paid{border-left-color:#5C7158}
+  .appt .paidtag{position:absolute;top:9px;right:11px;width:16px;height:16px;border-radius:50%;background:#E5EBE3;color:#5C7158;display:grid;place-items:center}
+  .appt .paidtag svg{width:10px;height:10px}
+  .appt.compact{padding:6px 12px;flex-direction:row;align-items:center;gap:8px}
+  .appt.compact .at{margin:0}
+  .appt.compact .ac{flex:1}
+
+  /* linha "agora" — a assinatura */
+  .now{position:absolute;left:0;right:14px;z-index:6;pointer-events:none;display:flex;align-items:center}
+  .now .bubble{position:absolute;left:6px;transform:translateY(-50%);font-family:'Fraunces',serif;font-weight:600;font-size:11px;color:#fff;background:var(--accent-deep);padding:2px 7px;border-radius:7px;box-shadow:0 4px 10px -4px rgba(138,124,117,.8)}
+  .now .line{position:absolute;left:54px;right:0;height:0;border-top:1.5px solid var(--accent-deep)}
+  .now .dot{position:absolute;left:51px;width:9px;height:9px;border-radius:50%;background:var(--accent-deep);transform:translateY(-50%);box-shadow:0 0 0 4px rgba(168,154,147,.28)}
+
+  /* FAB */
+  .fab{position:absolute;right:18px;bottom:24px;z-index:30;display:inline-flex;align-items:center;gap:9px;height:54px;padding:0 22px 0 18px;border-radius:999px;background:var(--graphite);color:#fff;border:none;font:inherit;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 22px 40px -16px rgba(40,40,42,.7)}
+  .fab svg{width:20px;height:20px}
+  .fab:active{background:#222225}
+
+  /* =========================================================
+     BOTTOM SHEETS (marcar / detalhe)
+     ========================================================= */
+  .backdrop{position:absolute;inset:0;z-index:40;background:rgba(40,40,42,.42);opacity:0;visibility:hidden;transition:.22s}
+  .backdrop.show{opacity:1;visibility:visible}
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:50;background:var(--surface);border-radius:26px 26px 0 0;box-shadow:0 -24px 60px -28px rgba(40,40,42,.6);transform:translateY(101%);transition:transform .26s cubic-bezier(.32,.72,0,1);max-height:92%;display:flex;flex-direction:column}
+  .sheet.show{transform:translateY(0)}
+  .grab{flex-shrink:0;display:flex;justify-content:center;padding:10px 0 4px}
+  .grab i{width:38px;height:4px;border-radius:3px;background:#d8d8d6}
+  .sheet-head{flex-shrink:0;display:flex;align-items:flex-start;gap:12px;padding:6px 22px 14px;border-bottom:1px solid var(--line-soft)}
+  .sheet-head .ttl{flex:1;min-width:0}
+  .sheet-head h3{font-family:'Fraunces',serif;font-weight:500;font-size:21px;letter-spacing:-.3px;line-height:1.1}
+  .sheet-head .meta{font-size:13px;color:var(--ink-soft);margin-top:4px}
+  .sheet-head .x{width:34px;height:34px;border-radius:10px;border:none;background:var(--surface-2);color:var(--ink-soft);font-size:20px;line-height:1;cursor:pointer;flex-shrink:0;display:grid;place-items:center}
+  .sheet-body{flex:1;overflow-y:auto;padding:18px 22px;scrollbar-width:thin}
+  .sheet-foot{flex-shrink:0;padding:14px 22px calc(20px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;gap:10px;background:var(--surface)}
+  .sheet-foot .primary{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--graphite);color:#fff;border:none;border-radius:13px;padding:15px;font:inherit;font-size:15px;font-weight:600;cursor:pointer}
+  .sheet-foot .ghost{background:none;border:none;color:var(--ink-soft);font:inherit;font-size:14px;font-weight:600;padding:0 16px;cursor:pointer}
+
+  /* campos no sheet de marcar */
+  .f{margin-bottom:16px}
+  .f > label{display:block;font-size:13px;font-weight:600;margin-bottom:8px}
+  .f > label .req{color:var(--accent-deep)}
+  .ctrl{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font:inherit;font-size:15px;color:var(--ink);transition:.15s}
+  .ctrl:focus{outline:none;background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .pick{border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:9px;min-height:50px}
+  .pick .selected{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:7px}
+  .pick .selected:empty{margin:0}
+  .tag{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:9px;font-size:13px;font-weight:600;background:var(--accent-soft);color:var(--accent-deep)}
+  .tag b{background:none;font-weight:600}
+  .tag .rm{cursor:pointer;opacity:.7;font-size:15px;line-height:1}
+  .pick .search{display:flex;align-items:center;gap:9px;padding:4px 6px}
+  .pick .search svg{color:var(--accent-deep);flex-shrink:0}
+  .pick .search input{border:none;background:none;outline:none;font:inherit;font-size:14.5px;width:100%;color:var(--ink)}
+  .pick .search input::placeholder{color:#a7a7a9}
+  .hlp{font-size:12px;color:var(--ink-soft);margin-top:7px}
+
+  /* detalhe do atendimento */
+  .det-sec{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+  .det-row{display:flex;align-items:baseline;gap:10px;font-size:14px;padding:5px 0}
+  .det-row .k{width:96px;flex-shrink:0;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+  .det-row .v{flex:1;color:var(--ink)}
+  .det-row .v b{font-weight:600}
+  .paidline{display:flex;align-items:center;gap:8px;background:#E5EBE3;color:#5C7158;border:1px solid #D4DDD0;border-radius:11px;padding:11px 14px;font-size:14px;font-weight:600}
+  .paidline svg{width:15px;height:15px}
+  .linkrow{display:flex;align-items:center;justify-content:space-between;padding:14px 2px 0;margin-top:4px;border-top:1px solid var(--line-soft)}
+  .linkrow a{color:var(--ink-soft);font-size:14px;font-weight:600;text-decoration:none}
+  .linkrow a.danger{color:#9a6a62}
+
+  /* nota lateral fora do device */
+  .notes{max-width:560px;margin:46px auto 0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px 26px}
+  .notes h3{font-family:'Fraunces',serif;font-weight:500;font-size:18px;margin-bottom:12px}
+  .notes ul{list-style:none;display:flex;flex-direction:column;gap:11px}
+  .notes li{position:relative;padding-left:20px;font-size:13.5px;color:var(--ink-soft);line-height:1.5}
+  .notes li::before{content:"";position:absolute;left:0;top:8px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  .notes li b{color:var(--ink);font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){
+    .sheet,.backdrop{transition:none}
+  }
+  @media (max-width:520px){
+    body{padding:24px 0 40px}
+    .device{transform:scale(.92);transform-origin:top center}
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="stage-head">
+      <h1 class="serif">SalãoApp no celular</h1>
+      <p>Escopo mobile: só <b>Login</b> + <b>Agenda</b> (ver e marcar). A grade de colunas do desktop<br>vira uma linha do tempo por profissional. Toque um horário livre ou o <b>+</b> para marcar.</p>
+    </div>
+
+    <div class="frames">
+
+      <!-- ============ LOGIN ============ -->
+      <div class="frame-wrap">
+        <div class="frame-cap">Tela 1 · <em>Entrar</em></div>
+        <div class="device">
+          <div class="screen">
+            <div class="notch"></div>
+            <div class="statusbar">
+              <span>9:41</span>
+              <span class="dots">
+                <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="6" width="3" height="5" rx="1"/><rect x="4.5" y="4" width="3" height="7" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+                <svg width="22" height="11" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1" y="1.5" width="19" height="9" rx="2.5"/><rect x="2.5" y="3" width="13" height="6" rx="1" fill="currentColor" stroke="none"/><rect x="21.5" y="4" width="1.6" height="4" rx="1" fill="currentColor" stroke="none"/></svg>
+              </span>
+            </div>
+            <div class="login">
+              <div class="brand">
+                <span class="mark">Salão<em>App</em></span>
+                <span class="tag">Gestão do salão</span>
+              </div>
+              <h2 class="serif">Entrar</h2>
+              <p class="sub">Acesse a agenda do salão.</p>
+              <div class="field">
+                <label>Nome de usuário</label>
+                <input class="control" type="text" value="carla" />
+              </div>
+              <div class="field">
+                <label>Senha</label>
+                <input class="control" type="password" value="••••••••" />
+              </div>
+              <button class="enter">Entrar</button>
+              <p class="foot">Acesso restrito à equipe</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ AGENDA ============ -->
+      <div class="frame-wrap">
+        <div class="frame-cap">Tela 2 · <em>Agenda do dia</em></div>
+        <div class="device">
+          <div class="screen">
+            <div class="notch"></div>
+            <div class="statusbar">
+              <span>9:41</span>
+              <span class="dots">
+                <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="6" width="3" height="5" rx="1"/><rect x="4.5" y="4" width="3" height="7" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+                <svg width="22" height="11" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1" y="1.5" width="19" height="9" rx="2.5"/><rect x="2.5" y="3" width="13" height="6" rx="1" fill="currentColor" stroke="none"/><rect x="21.5" y="4" width="1.6" height="4" rx="1" fill="currentColor" stroke="none"/></svg>
+              </span>
+            </div>
+
+            <div class="app">
+              <!-- topo -->
+              <div class="m-top">
+                <span class="mark serif">Salão<em>App</em></span>
+                <button class="iconbtn" title="Sair" aria-label="Sair">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                </button>
+              </div>
+
+              <!-- data -->
+              <div class="m-datebar">
+                <button class="daynav" aria-label="Dia anterior">‹</button>
+                <button class="daypick">
+                  <span class="w">Sábado</span>
+                  <span class="d">7 de junho</span>
+                </button>
+                <button class="daynav" aria-label="Próximo dia">›</button>
+              </div>
+
+              <!-- profissionais -->
+              <div class="pros">
+                <div class="pros-scroll">
+                  <button class="chip on">Carla <span class="n">4</span></button>
+                  <button class="chip">Renata <span class="n">3</span></button>
+                  <button class="chip">Aline <span class="n">3</span></button>
+                  <button class="chip off">Bruno <span class="n">3</span></button>
+                </div>
+              </div>
+
+              <!-- timeline -->
+              <div class="tlwrap" id="tlwrap">
+                <div class="timeline">
+                  <!-- trilha de horas (Fraunces) + linhas -->
+                  <div class="rail" id="rail"></div>
+                  <div id="gridlines"></div>
+
+                  <!-- agora (13:10) -->
+                  <div class="now" style="top:510px">
+                    <span class="bubble">13:10</span>
+                    <span class="dot"></span>
+                    <span class="line"></span>
+                  </div>
+
+                  <div class="track" id="track">
+                    <!-- horários livres (tocáveis) -->
+                    <div class="freehint" data-sheet="new" style="top:8px;height:80px"><span>＋ 08:00 livre</span></div>
+                    <div class="freehint" data-sheet="new" style="top:200px;height:80px"><span>＋ 10:00 livre</span></div>
+                    <div class="freehint" data-sheet="new" style="top:584px;height:120px"><span>＋ 14:10 livre</span></div>
+
+                    <!-- 09:00 · 60min · pago -->
+                    <div class="appt paid" data-sheet="det" style="top:96px;height:90px">
+                      <span class="paidtag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>
+                      <span class="at">09:00 – 10:00</span>
+                      <span class="ac">Marina Costa</span>
+                      <span class="as">Corte + Escova</span>
+                    </div>
+
+                    <!-- 11:00 · 90min -->
+                    <div class="appt" data-sheet="det" style="top:288px;height:138px">
+                      <span class="at">11:00 – 12:30</span>
+                      <span class="ac">Fernanda Dias</span>
+                      <span class="as">Coloração + Hidratação</span>
+                    </div>
+
+                    <!-- 13:00 · 30min curto -->
+                    <div class="appt compact" data-sheet="det" style="top:480px;height:44px">
+                      <span class="at">13:00</span>
+                      <span class="ac">Letícia Alves · Escova</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- FAB dentro da área rolável p/ ficar preso ao canto visível -->
+              </div>
+
+              <button class="fab" data-sheet="new">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+                Marcar
+              </button>
+
+              <!-- ======= SHEET: MARCAR ======= -->
+              <div class="backdrop" data-close></div>
+              <div class="sheet" id="sheet-new">
+                <div class="grab"><i></i></div>
+                <div class="sheet-head">
+                  <div class="ttl">
+                    <h3 class="serif">Novo agendamento</h3>
+                    <p class="meta">Sábado, 7 de junho · Carla</p>
+                  </div>
+                  <button class="x" data-close>&times;</button>
+                </div>
+                <div class="sheet-body">
+                  <div class="two">
+                    <div class="f">
+                      <label>Data <span class="req">*</span></label>
+                      <input class="ctrl" type="date" value="2026-06-07" />
+                    </div>
+                    <div class="f">
+                      <label>Hora <span class="req">*</span></label>
+                      <input class="ctrl" type="time" value="14:00" />
+                    </div>
+                  </div>
+
+                  <div class="f">
+                    <label>Profissional <span class="req">*</span></label>
+                    <div class="pick">
+                      <div class="selected"><span class="tag">Carla Bianchi <span class="rm">&times;</span></span></div>
+                      <div class="search">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input placeholder="Adicionar profissional…" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="f">
+                    <label>Serviços <span class="req">*</span></label>
+                    <div class="pick">
+                      <div class="selected">
+                        <span class="tag">Corte <span class="rm">&times;</span></span>
+                        <span class="tag">Escova <span class="rm">&times;</span></span>
+                      </div>
+                      <div class="search">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input placeholder="Adicionar serviço…" />
+                      </div>
+                    </div>
+                    <p class="hlp">Duração sugerida pelos serviços: 60 min.</p>
+                  </div>
+
+                  <div class="f">
+                    <label>Cliente</label>
+                    <div class="pick">
+                      <div class="selected"></div>
+                      <div class="search">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input placeholder="Buscar cliente…" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="f">
+                    <label>Observações</label>
+                    <textarea class="ctrl" rows="2" placeholder="Opcional"></textarea>
+                  </div>
+                </div>
+                <div class="sheet-foot">
+                  <button class="primary">Criar agendamento</button>
+                  <button class="ghost" data-close>Cancelar</button>
+                </div>
+              </div>
+
+              <!-- ======= SHEET: DETALHE ======= -->
+              <div class="sheet" id="sheet-det">
+                <div class="grab"><i></i></div>
+                <div class="sheet-head">
+                  <div class="ttl">
+                    <h3 class="serif">Marina Costa</h3>
+                    <p class="meta">Sábado, 7 de junho · 09:00 – 10:00</p>
+                  </div>
+                  <button class="x" data-close>&times;</button>
+                </div>
+                <div class="sheet-body">
+                  <div class="det-sec">
+                    <div class="det-row"><span class="k">Profissional</span><span class="v"><b>Carla Bianchi</b></span></div>
+                    <div class="det-row"><span class="k">Serviços</span><span class="v">Corte + Escova</span></div>
+                    <div class="det-row"><span class="k">Duração</span><span class="v">60 min</span></div>
+                  </div>
+                  <div class="paidline">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>
+                    Pago · R$ 130,00
+                  </div>
+                  <div class="linkrow">
+                    <a href="#">Editar</a>
+                    <a href="#" class="danger">Estornar pagamento</a>
+                  </div>
+                </div>
+              </div>
+
+            </div><!-- /.app -->
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.frames -->
+
+    <div class="notes">
+      <h3 class="serif">O que muda do desktop pro celular</h3>
+      <ul>
+        <li><b>Só Agenda + Login.</b> Clientes, Profissionais, Serviços, Produtos e Financeiro continuam só no computador — somem do celular.</li>
+        <li><b>Grade vira linha do tempo.</b> Um profissional por vez (chips no topo); a altura do bloco continua sendo a duração, igual ao desktop.</li>
+        <li><b>Linha "agora"</b> em taupe + abre já rolada no horário atual — bate o olho no que é agora e no próximo.</li>
+        <li><b>Marcar e ver</b> abrem de baixo (bottom-sheet) reusando o mesmo formulário de agendamento — <b>sem mudança no backend</b>.</li>
+        <li>App fica na VPS: computador e celular acessam pela internet, mesma URL; o layout se adapta ao tamanho da tela.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Trilha de horas (Fraunces) + linhas de grade — 08:00 a 20:00, 30min = 48px.
+    (function () {
+      var ppm = 1.6, startH = 8, endH = 20;
+      var rail = document.getElementById('rail');
+      var grid = document.getElementById('gridlines');
+      if (!rail) return;
+      for (var m = 0; m <= (endH - startH) * 60; m += 30) {
+        var top = m * ppm;
+        var full = (m % 60 === 0);
+        if (full) {
+          var hh = startH + m / 60;
+          var hm = document.createElement('div');
+          hm.className = 'hourmark';
+          hm.style.top = (top + 14) + 'px';
+          hm.innerHTML = '<span class="h">' + (hh < 10 ? '0' + hh : hh) + '</span>';
+          rail.appendChild(hm);
+        }
+        var gl = document.createElement('div');
+        gl.className = 'gridline' + (full ? ' full' : '');
+        gl.style.top = (top + 14) + 'px';
+        grid.appendChild(gl);
+      }
+    })();
+
+    // Sheets: abrir/fechar
+    (function () {
+      var scope = document.querySelectorAll('.app');
+      scope.forEach(function (app) {
+        var backdrop = app.querySelector('.backdrop');
+        function close() {
+          app.querySelectorAll('.sheet').forEach(function (s) { s.classList.remove('show'); });
+          backdrop.classList.remove('show');
+        }
+        function open(id) {
+          var s = app.querySelector('#sheet-' + id);
+          if (!s) return;
+          backdrop.classList.add('show');
+          s.classList.add('show');
+        }
+        app.querySelectorAll('[data-sheet]').forEach(function (el) {
+          el.addEventListener('click', function () { open(el.getAttribute('data-sheet') === 'new' ? 'new' : 'det'); });
+        });
+        app.querySelectorAll('[data-close]').forEach(function (el) {
+          el.addEventListener('click', close);
+        });
+      });
+    })();
+
+    // Abre já rolada no "agora"
+    (function () {
+      var wrap = document.getElementById('tlwrap');
+      if (!wrap) return;
+      var now = wrap.querySelector('.now');
+      requestAnimationFrame(function () {
+        var top = parseFloat(now.style.top) || 0;
+        wrap.scrollTop = Math.max(0, top - wrap.clientHeight * 0.42);
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="frame" x-data="{ tipo: '{{ tipo }}' }">
+  <div class="crumb">
+    <a href="/financeiro/">Financeiro</a>
+    <span class="sep">/</span>
+    <span class="cur">{{ titulo }}</span>
+  </div>
+
+  <div class="form-head">
+    <div>
+      <h1 class="serif">{{ titulo }}</h1>
+      <div class="meta">Registre uma receita avulsa ou uma despesa.</div>
+    </div>
+  </div>
+
+  {% if erro %}
+    <div class="banner-erro">{{ erro }}</div>
+  {% endif %}
+
+  <div class="card">
+    <form method="post" action="{{ action }}">
+      <div class="field">
+        <label class="lbl">Tipo <span class="req">*</span></label>
+        <div class="typeseg">
+          <label>
+            <input type="radio" name="tipo" value="despesa" x-model="tipo" />
+            <span class="opt out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg> Despesa</span>
+          </label>
+          <label>
+            <input type="radio" name="tipo" value="receita" x-model="tipo" />
+            <span class="opt in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg> Receita</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="grid2">
+          <div>
+            <label class="lbl">Valor <span class="req">*</span></label>
+            <div class="money-wrap">
+              <span class="cur">R$</span>
+              <input class="control money" type="text" inputmode="decimal" name="valor"
+                     placeholder="0,00" value="{{ valor_input }}" />
+            </div>
+          </div>
+          <div>
+            <label class="lbl">Data <span class="req">*</span></label>
+            <input class="control" type="date" name="data" value="{{ data_input }}" />
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">Categoria <span class="req">*</span></label>
+        {# Dois selects; o oculto é desabilitado para não ser enviado. #}
+        <div x-show="tipo === 'despesa'">
+          <select class="control" name="categoria_id" :disabled="tipo !== 'despesa'">
+            {% for c in categorias_despesa %}
+              <option value="{{ c.id }}" {% if categoria_id == c.id %}selected{% endif %}>{{ c.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div x-show="tipo === 'receita'" x-cloak>
+          <select class="control" name="categoria_id" :disabled="tipo !== 'receita'">
+            {% for c in categorias_receita %}
+              <option value="{{ c.id }}" {% if categoria_id == c.id %}selected{% endif %}>{{ c.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <p class="help">Gerencie a lista em <a href="/financeiro/categorias" style="color:var(--accent-deep)">Categorias</a>.</p>
+      </div>
+
+      <div class="field">
+        <label class="lbl">Descrição</label>
+        <input class="control" type="text" maxlength="200" name="descricao"
+               placeholder="Ex.: Aluguel do espaço — junho" value="{{ descricao }}" />
+      </div>
+
+      <div class="field">
+        <label class="lbl">Observações</label>
+        <textarea class="control" rows="3" name="observacoes" maxlength="2000"
+                  placeholder="Detalhes, nota fiscal, fornecedor…">{{ observacoes }}</textarea>
+      </div>
+
+      <div class="actions">
+        <button class="btn-primary" type="submit" style="margin:0">Salvar lançamento</button>
+        <a class="btn-ghost" href="/financeiro/">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

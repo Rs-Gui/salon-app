@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SalãoApp · Serviços</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     SERVIÇOS · Paleta BRUMA (cinza neutro claro)
+     Recriação fiel da lista de serviços do app (tabela:
+     Serviço · Preço · Duração · Status · Ações), com estados
+     ativo / inativo e ações Editar · Desativar · Reativar.
+     Serviços NÃO são pessoas → tile quadrado com ícone (sem monograma).
+     =========================================================== */
+  :root{
+    --bg:        #F4F4F3;
+    --surface:   #FFFFFF;
+    --surface-2: #ECECEB;
+    --ink:       #28282A;
+    --ink-soft:  #6E6E72;
+    --line:      #E5E5E3;
+    --line-soft: #EFEFED;
+    --accent:    #A89A93;
+    --accent-deep:#8A7C75;
+    --accent-soft:#EAE5E2;
+    --graphite:  #38383B;
+    --radius:    18px;
+    --shadow:    0 18px 40px -26px rgba(40,40,42,.30);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Hanken Grotesk',system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;height:100vh;overflow:hidden;
+  }
+  .serif{font-family:'Fraunces',Georgia,serif}
+
+  /* ---------- HEADER ---------- */
+  header.topbar{
+    display:flex;align-items:center;gap:24px;padding:18px 32px;
+    background:rgba(244,244,243,.9);border-bottom:1px solid var(--line);flex-shrink:0;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand .mark{font-family:'Fraunces',serif;font-weight:600;font-size:24px;color:var(--ink)}
+  .brand .mark em{color:var(--accent-deep);font-style:italic}
+  .brand .tag{font-size:11px;text-transform:uppercase;letter-spacing:.28em;color:var(--ink-soft)}
+  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:18px}
+  .date-pill{font-size:13px;color:var(--ink-soft)}
+  .date-pill b{color:var(--ink);font-weight:600}
+  .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--graphite));display:grid;place-items:center;color:#fff;font-weight:600;font-size:14px;box-shadow:var(--shadow)}
+
+  /* ---------- SHELL ---------- */
+  .shell{display:flex;flex:1;min-height:0}
+  aside{width:248px;flex-shrink:0;padding:26px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--bg)}
+  .nav-label{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:#a7a7a9;padding:0 14px;margin-bottom:12px}
+  nav{display:flex;flex-direction:column;gap:2px}
+  .nav-item{display:flex;align-items:center;gap:13px;padding:11px 14px;border-radius:12px;color:var(--ink-soft);font-weight:500;font-size:14.5px;text-decoration:none;transition:.18s}
+  .nav-item svg{width:19px;height:19px;flex-shrink:0;opacity:.8}
+  .nav-item:hover{background:var(--surface-2);color:var(--ink)}
+  .nav-item.active{background:var(--graphite);color:#fff;box-shadow:var(--shadow)}
+  .nav-item.active svg{opacity:1}
+  .nav-item .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  aside .foot{margin-top:auto;padding-top:18px;border-top:1px solid var(--line)}
+  .logout{display:flex;align-items:center;gap:13px;padding:11px 14px;color:var(--ink-soft);font-size:14px;text-decoration:none;border-radius:12px}
+  .logout:hover{background:var(--surface-2);color:var(--accent-deep)}
+
+  /* ---------- MAIN ---------- */
+  main{flex:1;overflow:auto;padding:28px 32px 40px;display:flex;flex-direction:column}
+  main{scrollbar-width:thin;scrollbar-color:#cfcfcd var(--bg)}
+  main::-webkit-scrollbar{width:10px}
+  main::-webkit-scrollbar-thumb{background:#cfcfcd;border-radius:6px;border:2px solid var(--bg)}
+
+  /* ---------- PAGE HEAD ---------- */
+  .page-head{display:flex;align-items:flex-end;gap:16px;margin-bottom:20px}
+  .page-title{font-family:'Fraunces',serif;font-weight:500;font-size:28px;letter-spacing:-.4px;line-height:1}
+  .count{font-size:13px;color:var(--ink-soft);padding-bottom:2px}
+  .count b{color:var(--ink);font-weight:600}
+  .btn-primary{margin-left:auto;display:inline-flex;align-items:center;gap:8px;background:var(--graphite);color:#fff;border:none;border-radius:10px;padding:11px 18px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:var(--shadow);transition:.15s;text-decoration:none}
+  .btn-primary:hover{background:#222225}
+
+  /* ---------- TOOLBAR (proposto) ---------- */
+  .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .search{flex:1;max-width:420px;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 14px;transition:.15s}
+  .search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .search svg{color:var(--accent-deep);flex-shrink:0}
+  .search input{border:none;outline:none;background:none;font:inherit;font-size:14px;color:var(--ink);width:100%}
+  .search input::placeholder{color:#a7a7a9}
+  .toggle{display:inline-flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 14px;font-size:13.5px;color:var(--ink-soft);cursor:pointer;user-select:none;transition:.15s}
+  .toggle:hover{background:var(--surface-2);color:var(--ink)}
+  .toggle .sw{width:34px;height:19px;border-radius:20px;background:#d8d8d6;position:relative;transition:.18s}
+  .toggle .sw::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:.18s}
+
+  /* ---------- ROSTER (tabela = catálogo de serviços) ---------- */
+  .roster{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  thead th{
+    text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-soft);background:var(--surface-2);padding:13px 18px;border-bottom:1px solid var(--line);
+  }
+  thead th.right{text-align:right}
+  tbody tr{border-top:1px solid var(--line-soft);transition:background .13s}
+  tbody tr:first-child{border-top:none}
+  tbody tr:hover{background:var(--bg)}
+  td{padding:14px 18px;vertical-align:middle;color:var(--ink)}
+
+  /* célula serviço: tile quadrado (sem monograma) + nome */
+  .who{display:flex;align-items:center;gap:13px}
+  .tile{width:38px;height:38px;flex-shrink:0;border-radius:11px;background:var(--surface-2);display:grid;place-items:center;color:var(--accent-deep)}
+  .tile svg{width:19px;height:19px}
+  .who .nm{font-weight:600;font-size:14.5px;color:var(--ink);line-height:1.15}
+  .muted-cell{color:var(--ink-soft)}
+
+  /* preço / duração */
+  .price{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+  .dur{color:var(--ink-soft);font-variant-numeric:tabular-nums}
+
+  /* status */
+  .status{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;color:var(--ink)}
+  .status .pt{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .status.off{color:var(--ink-soft)}
+  .status.off .pt{background:#c2c2bf;box-shadow:none}
+
+  /* ações */
+  .acts{display:flex;align-items:center;justify-content:flex-end;gap:12px;white-space:nowrap}
+  .acts a,.acts button{font:inherit;font-size:13.5px;font-weight:500;background:none;border:none;cursor:pointer;text-decoration:none;transition:.13s}
+  .acts .edit{color:var(--ink-soft)}
+  .acts .edit:hover{color:var(--ink)}
+  .acts .sep{color:var(--line);font-weight:400}
+  .acts .danger{color:#9a6a62}
+  .acts .danger:hover{color:#7d5049}
+  .acts .reactivate{color:var(--accent-deep)}
+  .acts .reactivate:hover{color:var(--ink)}
+
+  /* linha inativa */
+  tr.inactive .tile{opacity:.6}
+  tr.inactive .who .nm{color:var(--ink-soft)}
+  tr.inactive td{color:var(--ink-soft)}
+  tr.inactive .price{color:var(--ink-soft)}
+
+  .hint{font-size:12px;color:#a7a7a9;margin-top:14px;padding-left:2px}
+
+  @media (max-width:880px){
+    aside{display:none}
+    .hide-sm{display:none}
+    td,thead th{padding:12px 14px}
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark">Salão<em>App</em></span>
+      <span class="tag">Gestão do salão</span>
+    </div>
+    <div class="right">
+      <div class="date-pill">Quinta, <b>18 de junho</b></div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside>
+      <div class="nav-label">Menu</div>
+      <nav>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Agendamentos</a>
+        <a class="nav-item" href="clientes.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg> Clientes</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg> Profissionais</a>
+        <a class="nav-item active" href="servicos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg> Serviços <span class="dot"></span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18l-1.5 12.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5z"/><path d="M8 7a4 4 0 0 1 8 0"/></svg> Produtos</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg> Financeiro</a>
+      </nav>
+      <div class="foot">
+        <a class="logout" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Sair</a>
+      </div>
+    </aside>
+
+    <main>
+      <!-- CABEÇALHO -->
+      <div class="page-head">
+        <h1 class="page-title serif">Serviços</h1>
+        <span class="count"><b>8</b> no total · 1 inativo</span>
+        <a class="btn-primary" href="servicos-form.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg> Novo serviço</a>
+      </div>
+
+      <!-- TOOLBAR (proposto: busca + inativos) -->
+      <div class="toolbar">
+        <label class="search">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" placeholder="Buscar serviço pelo nome" />
+        </label>
+        <span class="toggle"><span class="sw"></span> Mostrar inativos</span>
+      </div>
+
+      <!-- ROSTER -->
+      <div class="roster">
+        <table>
+          <thead>
+            <tr>
+              <th>Serviço</th>
+              <th class="hide-sm">Preço</th>
+              <th class="hide-sm">Duração</th>
+              <th>Status</th>
+              <th class="right">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="who"><span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg></span><span class="nm">Corte Feminino</span></div></td>
+              <td class="hide-sm"><span class="price">R$ 80,00</span></td>
+              <td class="hide-sm"><span class="dur">60 min</span></td>
+              <td><span class="status"><span class="pt"></span> Ativo</span></td>
+              <td><div class="acts"><a class="edit" href="servicos-form.html">Editar</a><span class="sep">|</span><button class="danger">Desativar</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="who"><span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg></span><span class="nm">Corte + Escova</span></div></td>
+              <td class="hide-sm"><span class="price">R$ 110,00</span></td>
+              <td class="hide-sm"><span class="dur">90 min</span></td>
+              <td><span class="status"><span class="pt"></span> Ativo</span></td>
+              <td><div class="acts"><a class="edit" href="servicos-form.html">Editar</a><span class="sep">|</span><button class="danger">Desativar</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="who"><span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.4 5.3L20 9l-4 3.9.9 5.6L12 16l-4.9 2.5L8 12.9 4 9l5.6-.7z"/></svg></span><span class="nm">Coloração</span></div></td>
+              <td class="hide-sm"><span class="price">R$ 180,00</span></td>
+              <td class="hide-sm"><span class="dur">120 min</span></td>
+              <td><span class="status"><span class="pt"></span> Ativo</span></td>
+              <td><div class="acts"><a class="edit" href="servicos-form.html">Editar</a><span class="sep">|</span><button class="danger">Desativar</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="who"><span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.4 5.3L20 9l-4 3.9.9 5.6L12 16l-4.9 2.5L8 12.9 4 9l5.6-.7z"/></svg></span><span class="nm">Mechas</span></div></td>
+              <td class="hide-sm"><span class="price">R$ 320,00</span></td>
+              <td class="hide-sm"><span class="dur">180 min</span></td>
+              <td><span class="status"><span class="pt"></span> Ativo</span></td>
+              <td><div class="acts"><a class="edit" href="servicos-form.html">Editar</a><span class="sep">|</span><button class="danger">Desativar</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="who"><span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.4 5.3L20 9l-4 3.9.9 5.6L12 16l-4.9 2.5L8 12.9 4 9l5.6-.7z"/></svg></span><span class="nm">Hidratação</span></div></td>
+              <td class="hide-sm"><span class="price">R$ 70,00</span></td>
+              <td class="hide-sm"><span class="dur">45 min</span></td>
+              <td><span class="status"><span class="pt"></span> Ativo</span></td>
+              <td><div class="acts"><a class="edit" href="servicos-form.html">Editar</a><span class="sep">|</span><button class="danger">Desativar</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="who"><span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.4 5.3L20 9l-4 3.9.9 5.6L12 16l-4.9 2.5L8 12.9 4 9l5.6-.7z"/></svg></span><span class="nm">Manicure</span></div></td>
+              <td class="hide-sm"><span class="price">R$ 45,00</span></td>
+              <td class="hide-sm"><span class="dur">45 min</span></td>
+              <td><span class="status"><span class="pt"></span> Ativo</span></td>
+              <td><div class="acts"><a class="edit" href="servicos-form.html">Editar</a><span class="sep">|</span><button class="danger">Desativar</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="who"><span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.4 5.3L20 9l-4 3.9.9 5.6L12 16l-4.9 2.5L8 12.9 4 9l5.6-.7z"/></svg></span><span class="nm">Pedicure</span></div></td>
+              <td class="hide-sm"><span class="price">R$ 55,00</span></td>
+              <td class="hide-sm"><span class="dur">60 min</span></td>
+              <td><span class="status"><span class="pt"></span> Ativo</span></td>
+              <td><div class="acts"><a class="edit" href="servicos-form.html">Editar</a><span class="sep">|</span><button class="danger">Desativar</button></div></td>
+            </tr>
+
+            <!-- estado INATIVO -->
+            <tr class="inactive">
+              <td><div class="who"><span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg></span><span class="nm">Escova</span></div></td>
+              <td class="hide-sm"><span class="price">R$ 60,00</span></td>
+              <td class="hide-sm"><span class="dur">30 min</span></td>
+              <td><span class="status off"><span class="pt"></span> Inativo</span></td>
+              <td><div class="acts"><a class="edit" href="servicos-form.html">Editar</a><span class="sep">|</span><button class="reactivate">Reativar</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="hint">Serviços inativos seguem no histórico de agendamentos — desativar só os esconde das novas marcações.</p>
+
+      <!-- ============================================================
+           ESTADO VAZIO (referência — renderizar quando não há serviços)
+           Substitui o bloco .roster acima:
+
+           <div class="roster" style="border-style:dashed;box-shadow:none;
+                background:var(--surface);padding:48px;text-align:center">
+             <p style="color:var(--ink-soft);margin-bottom:14px">
+               Nenhum serviço cadastrado ainda.</p>
+             <a class="btn-primary" style="margin:0" href="servicos-form.html">+ Novo serviço</a>
+           </div>
+      ============================================================ -->
+    </main>
+  </div>
+</body>
+</html>

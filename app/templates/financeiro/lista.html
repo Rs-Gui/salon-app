@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-head">
+  <h1 class="page-title serif">Financeiro</h1>
+  <span class="count"><b>{{ total_lancamentos }}</b> lançamento{{ 's' if total_lancamentos != 1 }} em {{ mes_label | lower }}</span>
+  <a class="btn-primary" href="/financeiro/novo">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+    Novo lançamento
+  </a>
+</div>
+
+{# ---------- abas Lançamentos | Comandas ---------- #}
+<div class="fin-tabs">
+  <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg> Lançamentos</a>
+  <a href="/financeiro/comandas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg> Comandas</a>
+  <a href="/financeiro/comissoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Comissões</a>
+</div>
+
+<section class="fin-panel">
+  <div class="pcard in">
+    <div class="top">
+      <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+      <div class="lbl">Entradas</div>
+    </div>
+    <div class="val">R$ {{ total_entradas|brl }}</div>
+    <div class="pmeta">
+      {% if top_entradas %}
+        {% for nome, val in top_entradas %}{% if not loop.first %} · {% endif %}{{ nome }} <b>R$ {{ "%.0f"|format(val) }}</b>{% endfor %}
+      {% else %}Sem entradas no período{% endif %}
+    </div>
+  </div>
+  <div class="pcard out">
+    <div class="top">
+      <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+      <div class="lbl">Saídas</div>
+    </div>
+    <div class="val">R$ {{ total_saidas|brl }}</div>
+    <div class="pmeta">{{ n_despesas }} despesa{{ 's' if n_despesas != 1 }} no período</div>
+  </div>
+  <div class="pcard net {% if saldo < 0 %}neg{% endif %}">
+    <div class="top">
+      <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <div class="lbl">Saldo do mês</div>
+    </div>
+    <div class="val">R$ {{ saldo|brl }}</div>
+    <div class="pmeta">Entradas − Saídas</div>
+  </div>
+</section>
+
+<div class="toolbar">
+  <div class="stepper">
+    <a href="/financeiro/?mes={{ mes_anterior }}" aria-label="Mês anterior"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m15 18-6-6 6-6"/></svg></a>
+    <span class="month">{{ mes_label }}</span>
+    <a href="/financeiro/?mes={{ mes_proximo }}" aria-label="Próximo mês"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 18 6-6-6-6"/></svg></a>
+  </div>
+  <div class="seg" id="fin-seg">
+    <button type="button" class="on" data-filtro="todos">Todos</button>
+    <button type="button" data-filtro="receita">Entradas</button>
+    <button type="button" data-filtro="despesa">Saídas</button>
+  </div>
+  <label class="search">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="text" id="fin-busca" placeholder="Buscar por descrição ou categoria" autocomplete="off" />
+  </label>
+  <a class="btn-outline" href="/financeiro/categorias" style="text-decoration:none">Categorias</a>
+</div>
+
+{% if not linhas %}
+  <div class="empty">
+    <p>Nenhum lançamento em {{ mes_label | lower }}.</p>
+    <a class="btn-primary" style="margin:0" href="/financeiro/novo">+ Novo lançamento</a>
+  </div>
+{% else %}
+  <div class="roster cap-rows">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:84px">Data</th>
+          <th>Lançamento</th>
+          <th class="hide-sm">Categoria</th>
+          <th>Tipo</th>
+          <th class="right">Valor</th>
+          <th class="right" style="width:70px"></th>
+        </tr>
+      </thead>
+      <tbody id="fin-tbody">
+        {% for l in linhas %}
+        <tr class="comanda-row" data-tipo="{{ l.tipo }}"
+            data-busca="{{ (l.descricao ~ ' ' ~ l.categoria) | lower }}"
+            hx-get="/financeiro/{{ l.id }}/detalhe"
+            hx-target="#fin-modal-content" hx-swap="innerHTML"
+            onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
+          <td class="date-cell">{{ l.data_fmt }}</td>
+          <td>
+            <span class="desc">{{ l.descricao }}
+              {% if l.do_agendamento or l.usuario %}
+              <span class="from">
+                {%- if l.do_agendamento %}Pagamento de agendamento{% endif -%}
+                {%- if l.usuario %}{% if l.do_agendamento %} · {% endif %}por {{ l.usuario }}{% endif -%}
+              </span>
+              {% endif %}
+            </span>
+          </td>
+          <td class="hide-sm">{{ l.categoria }}</td>
+          <td>
+            {% if l.tipo == 'receita' %}
+              <span class="badge-fin receita"><span class="pt"></span> Receita</span>
+            {% else %}
+              <span class="badge-fin despesa"><span class="pt"></span> Despesa</span>
+            {% endif %}
+          </td>
+          <td class="right">
+            {% if l.tipo == 'receita' %}
+              <span class="amount in">+ R$ {{ l.valor|brl }}</span>
+            {% else %}
+              <span class="amount out">− R$ {{ l.valor|brl }}</span>
+            {% endif %}
+          </td>
+          <td class="right"><span class="see">Ver ›</span></td>
+        </tr>
+        {% endfor %}
+        <tr id="fin-sem-resultados" style="display:none">
+          <td colspan="6" class="muted-cell" style="text-align:center;padding:32px">
+            Nenhum lançamento encontrado para esse filtro.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="hint">Clique em um lançamento para ver o detalhe (e editar/excluir os avulsos). Receitas “do agendamento” nascem do pagamento na agenda e são geridas por lá.</p>
+{% endif %}
+
+{# ---------- modal de detalhe (carregado via HTMX) ---------- #}
+<div x-data="{open:false}"
+     @open-modal.window="open=true; document.body.style.overflow='hidden'"
+     @close-modal.window="open=false; document.body.style.overflow=''"
+     @keydown.escape.window="open=false; document.body.style.overflow=''"
+     x-show="open" x-cloak class="modal-backdrop">
+  <div class="modal-card scroll-bege">
+    <button type="button" class="modal-close" aria-label="Fechar"
+            @click="open=false; document.body.style.overflow=''">&times;</button>
+    <div id="fin-modal-content"></div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var busca = document.getElementById('fin-busca');
+    var seg = document.getElementById('fin-seg');
+    var tbody = document.getElementById('fin-tbody');
+    if (!tbody) return;
+    var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr[data-tipo]'));
+    var semResultados = document.getElementById('fin-sem-resultados');
+    var filtroTipo = 'todos';
+    function aplicar() {
+      var q = (busca.value || '').trim().toLowerCase();
+      var visiveis = 0;
+      rows.forEach(function (r) {
+        var ok = (r.getAttribute('data-busca') || '').indexOf(q) !== -1;
+        if (ok && filtroTipo !== 'todos' && r.getAttribute('data-tipo') !== filtroTipo) ok = false;
+        r.style.display = ok ? '' : 'none';
+        if (ok) visiveis++;
+      });
+      if (semResultados) semResultados.style.display = visiveis ? 'none' : '';
+    }
+    busca.addEventListener('input', aplicar);
+    seg.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-filtro]');
+      if (!btn) return;
+      filtroTipo = btn.getAttribute('data-filtro');
+      seg.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === btn); });
+      aplicar();
+    });
+    aplicar();
+  })();
+</script>
+{% endblock %}

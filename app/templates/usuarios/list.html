@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% set rotulos = {'superadmin': 'Super admin', 'admin': 'Admin', 'comum': 'Comum'} %}
+
+{% block content %}
+<div class="page-head">
+  <h1 class="page-title serif">Usuários</h1>
+</div>
+<p class="page-sub">Gerencie quem tem acesso ao SalãoApp.</p>
+
+{% if msg %}<div class="banner-ok">{{ msg }}</div>{% endif %}
+{% if erro %}<div class="banner-erro">{{ erro }}</div>{% endif %}
+
+<div class="card" style="margin-bottom:24px">
+  <div class="card-title serif">Novo usuário</div>
+  <form class="inline-form" method="post" action="/usuarios">
+    <div class="field">
+      <label class="lbl" for="nome_usuario">Nome de usuário</label>
+      <input class="control" id="nome_usuario" name="nome_usuario" type="text" required />
+    </div>
+    <div class="field">
+      <label class="lbl" for="nome_exibicao">Nome de exibição</label>
+      <input class="control" id="nome_exibicao" name="nome_exibicao" type="text" placeholder="opcional" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="senha">Senha</label>
+      <input class="control" id="senha" name="senha" type="password" required minlength="6" autocomplete="new-password" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="papel">Papel</label>
+      <select class="control" id="papel" name="papel">
+        <option value="comum" selected>Comum</option>
+        {% if pode_alterar_papel %}<option value="admin">Admin</option>{% endif %}
+      </select>
+    </div>
+    <button class="btn-primary" type="submit" style="margin:0">Criar</button>
+  </form>
+  <p class="help" style="margin-top:14px">
+    Nome: 3 a 30 caracteres (minúsculas, números, ponto, hífen, sublinhado). Senha: mínimo 6 caracteres.
+    {% if not pode_alterar_papel %} Apenas o super admin pode criar administradores.{% endif %}
+  </p>
+</div>
+
+<div class="roster">
+  <table>
+    <thead>
+      <tr>
+        <th>Usuário</th>
+        <th>Papel</th>
+        <th>Status</th>
+        <th class="right">Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in usuarios %}
+      {% set eh_super = u.papel == 'superadmin' %}
+      {% set eh_self = u.id == ator.id %}
+      {% set pode_desativar = (not eh_super) and (not eh_self) and (u.papel != 'admin' or ator.papel == 'superadmin') %}
+      {% set pode_reset = eh_self or pode_desativar %}
+      <tr class="{% if not u.ativo %}inactive{% endif %}">
+        <td>
+          <div class="u-name">{{ u.nome_exibicao or u.nome_usuario }}</div>
+          <div class="u-handle">@{{ u.nome_usuario }}{% if eh_self %} (você){% endif %}</div>
+        </td>
+        <td>
+          {% if eh_super %}
+            <span class="role-badge">Super admin</span>
+          {% elif pode_alterar_papel %}
+            <form method="post" action="/usuarios/{{ u.id }}/papel">
+              <select class="control xs" name="papel" onchange="this.form.submit()">
+                <option value="comum" {% if u.papel == 'comum' %}selected{% endif %}>Comum</option>
+                <option value="admin" {% if u.papel == 'admin' %}selected{% endif %}>Admin</option>
+              </select>
+            </form>
+          {% else %}
+            <span class="muted-cell">{{ rotulos.get(u.papel, u.papel) }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if u.ativo %}
+            <span class="status"><span class="pt"></span> Ativo</span>
+          {% else %}
+            <span class="status off"><span class="pt"></span> Inativo</span>
+          {% endif %}
+        </td>
+        <td>
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap">
+            {% if pode_reset %}
+            <form method="post" action="/usuarios/{{ u.id }}/senha"
+                  style="display:inline-flex;align-items:center;gap:6px"
+                  onsubmit="return this.senha.value.length >= 6 || (alert('A senha deve ter pelo menos 6 caracteres.'), false);">
+              <input class="control xs" name="senha" type="password" placeholder="Nova senha" minlength="6" />
+              <button type="submit" class="btn-outline">Redefinir</button>
+            </form>
+            {% endif %}
+            {% if pode_desativar %}
+            <form method="post" action="/usuarios/{{ u.id }}/ativo">
+              <button type="submit" class="btn-outline {% if u.ativo %}danger{% endif %}">{{ 'Desativar' if u.ativo else 'Ativar' }}</button>
+            </form>
+            {% endif %}
+            {% if not pode_reset and not pode_desativar %}
+            <span class="muted-cell">—</span>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

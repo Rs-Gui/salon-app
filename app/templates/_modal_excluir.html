@@ -1,0 +1,92 @@
+{# ----------------------------------------------------------------------
+   Modal de confirmação forte para exclusão permanente.
+   Incluído em produtos/lista.html e profissionais/lista.html.
+
+   Disparo: window.dispatchEvent(new CustomEvent('open-modal-excluir',
+            {detail: {nome: '<nome>', endpoint: '<url POST>'}}))
+   - Vanilla onclick (sem $dispatch) porque o disparador não tem ancestral x-data.
+   - O usuário precisa digitar EXCLUIR (case-sensitive) para habilitar o submit.
+   ---------------------------------------------------------------------- #}
+<div x-data="{
+       open: false,
+       nome: '',
+       endpoint: '',
+       tipo: '',
+       texto: '',
+       abrir(detail) {
+         this.nome = (detail && detail.nome) || '';
+         this.endpoint = (detail && detail.endpoint) || '';
+         this.tipo = (detail && detail.tipo) || '';
+         this.texto = '';
+         this.open = true;
+         document.body.style.overflow = 'hidden';
+         this.$nextTick(() => { if (this.$refs.input) this.$refs.input.focus(); });
+       },
+       fechar() {
+         this.open = false;
+         this.texto = '';
+         this.tipo = '';
+         document.body.style.overflow = '';
+       }
+     }"
+     @open-modal-excluir.window="abrir($event.detail)"
+     @keydown.escape.window="fechar()"
+     x-show="open" x-cloak
+     class="fixed inset-0 z-50 flex items-start justify-center pt-16 bg-stone-900/40">
+  <div class="bg-[#f5efe4] rounded-lg shadow-xl w-full max-w-md mx-4 relative max-h-[85vh] overflow-y-auto scroll-bege">
+    <button type="button"
+            @click="fechar()"
+            class="absolute top-3 right-3 text-stone-500 hover:text-stone-900 text-2xl leading-none"
+            aria-label="Fechar">&times;</button>
+    <form method="post" :action="endpoint" class="p-6 space-y-4">
+      <h2 class="text-lg font-semibold text-stone-900"
+          x-text="`Excluir ${nome} permanentemente?`"></h2>
+
+      <div x-show="tipo === 'produto'"
+           class="bg-red-50 border border-red-200 text-red-800 rounded-md p-3 text-sm">
+        Esta ação é <strong>irreversível</strong>. Todas as movimentações de estoque deste
+        produto serão apagadas junto.
+      </div>
+      <div x-show="tipo === 'profissional'"
+           class="bg-red-50 border border-red-200 text-red-800 rounded-md p-3 text-sm">
+        Esta ação é <strong>irreversível</strong>. O nome será preservado nos agendamentos
+        passados e futuros com a marca <strong>(excluído)</strong>, mas o cadastro do
+        profissional será apagado.
+      </div>
+      <div x-show="tipo !== 'produto' && tipo !== 'profissional'"
+           class="bg-red-50 border border-red-200 text-red-800 rounded-md p-3 text-sm">
+        Esta ação é <span class="font-semibold">irreversível</span>. Para produtos, todas as
+        movimentações de estoque deste item serão apagadas. Para profissionais, o nome será
+        preservado nos agendamentos com a marca "(excluído)".
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-stone-700 mb-1">
+          Para confirmar, digite EXCLUIR abaixo:
+        </label>
+        <input type="text"
+               x-ref="input"
+               x-model="texto"
+               autocomplete="off"
+               spellcheck="false"
+               class="w-full border border-stone-300 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-stone-500 font-mono tracking-wide" />
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button type="button"
+                @click="fechar()"
+                class="px-4 py-2 rounded-md text-sm font-medium bg-stone-200 hover:bg-stone-300 text-stone-800">
+          Cancelar
+        </button>
+        <button type="submit"
+                :disabled="texto !== 'EXCLUIR'"
+                :class="texto === 'EXCLUIR'
+                          ? 'bg-red-700 hover:bg-red-800 text-white cursor-pointer'
+                          : 'bg-red-300 text-white cursor-not-allowed'"
+                class="px-4 py-2 rounded-md text-sm font-semibold transition-colors">
+          Excluir permanentemente
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

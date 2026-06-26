@@ -1,0 +1,645 @@
+/* ===========================================================
+   BRUMA — sistema visual do SalãoApp
+   Tokens + shell (topbar/sidebar/main) + componentes de tela
+   (listas "roster", formulários, status, pills).
+   Aplicado de forma incremental: cada tela migrada usa estas
+   classes; telas ainda em Tailwind convivem dentro do shell.
+   =========================================================== */
+:root{
+  --bg:        #F4F4F3;
+  --surface:   #FFFFFF;
+  --surface-2: #ECECEB;
+  --ink:       #28282A;
+  --ink-soft:  #6E6E72;
+  --line:      #E5E5E3;
+  --line-soft: #EFEFED;
+  --accent:    #A89A93;
+  --accent-deep:#8A7C75;
+  --accent-soft:#EAE5E2;
+  --graphite:  #38383B;
+  --radius:    18px;
+  --shadow:    0 18px 40px -26px rgba(40,40,42,.30);
+}
+
+/* ---------- base ---------- */
+body.bruma{
+  font-family:'Hanken Grotesk',system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;height:100vh;overflow:hidden;margin:0;
+}
+.bruma .serif{font-family:'Fraunces',Georgia,serif}
+
+/* ---------- topbar ---------- */
+.bruma header.topbar{
+  display:flex;align-items:center;gap:24px;padding:18px 32px;
+  background:rgba(244,244,243,.9);border-bottom:1px solid var(--line);flex-shrink:0;
+}
+.bruma .brand{display:flex;align-items:baseline;gap:10px}
+.bruma .brand .mark{font-family:'Fraunces',serif;font-weight:600;font-size:24px;color:var(--ink);text-decoration:none}
+.bruma .brand .mark em{color:var(--accent-deep);font-style:italic}
+.bruma .brand .tag{font-size:11px;text-transform:uppercase;letter-spacing:.28em;color:var(--ink-soft)}
+.bruma .topbar .right{margin-left:auto;display:flex;align-items:center;gap:18px}
+.bruma .date-pill{font-size:13px;color:var(--ink-soft);text-transform:capitalize}
+.bruma .date-pill b{color:var(--ink);font-weight:600}
+
+/* ---------- shell ---------- */
+.bruma .shell{display:flex;flex:1;min-height:0}
+.bruma aside{width:248px;flex-shrink:0;padding:26px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--bg)}
+.bruma .nav-label{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:#a7a7a9;padding:0 14px;margin-bottom:12px}
+.bruma nav{display:flex;flex-direction:column;gap:2px}
+.bruma .nav-item{display:flex;align-items:center;gap:13px;padding:11px 14px;border-radius:12px;color:var(--ink-soft);font-weight:500;font-size:14.5px;text-decoration:none;transition:.18s}
+.bruma .nav-item svg{width:19px;height:19px;flex-shrink:0;opacity:.8}
+.bruma .nav-item:hover{background:var(--surface-2);color:var(--ink)}
+.bruma .nav-item.active{background:var(--graphite);color:#fff;box-shadow:var(--shadow)}
+.bruma .nav-item.active svg{opacity:1}
+.bruma .nav-item .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.bruma aside .foot{margin-top:auto;padding-top:18px;border-top:1px solid var(--line)}
+.bruma .who-conn{padding:2px 14px 12px;font-size:12px;color:var(--ink-soft)}
+.bruma .who-conn b{color:var(--ink);font-weight:600}
+.bruma .who-conn .badge{display:inline-block;margin-left:4px;font-size:10px;padding:1px 6px;border-radius:5px;background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.bruma .logout{display:flex;align-items:center;gap:13px;padding:11px 14px;color:var(--ink-soft);font-size:14px;text-decoration:none;border-radius:12px;width:100%;border:none;background:none;cursor:pointer;font:inherit;text-align:left}
+.bruma .logout:hover{background:var(--surface-2);color:var(--accent-deep)}
+
+/* ---------- main ---------- */
+.bruma main.content{flex:1;overflow:auto;padding:28px 32px 40px;display:flex;flex-direction:column}
+.bruma main.content{scrollbar-width:thin;scrollbar-color:#cfcfcd var(--bg)}
+.bruma main.content::-webkit-scrollbar{width:10px}
+.bruma main.content::-webkit-scrollbar-thumb{background:#cfcfcd;border-radius:6px;border:2px solid var(--bg)}
+
+/* ---------- page head ---------- */
+.bruma .page-head{display:flex;align-items:flex-end;gap:16px;margin-bottom:20px}
+.bruma .page-title{font-family:'Fraunces',serif;font-weight:500;font-size:28px;letter-spacing:-.4px;line-height:1}
+.bruma .count{font-size:13px;color:var(--ink-soft);padding-bottom:2px}
+.bruma .count b{color:var(--ink);font-weight:600}
+.bruma .btn-primary{margin-left:auto;display:inline-flex;align-items:center;gap:8px;background:var(--graphite);color:#fff;border:none;border-radius:10px;padding:11px 18px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:var(--shadow);transition:.15s;text-decoration:none}
+.bruma .btn-primary:hover{background:#222225}
+
+/* ---------- banner de erro ---------- */
+.bruma .banner-erro{background:#F0E2DF;border:1px solid #E4CEC8;color:#8E5A50;padding:12px 16px;border-radius:11px;margin-bottom:18px;font-size:14px}
+
+/* ---------- toolbar (busca + toggle) ---------- */
+.bruma .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.bruma .search{flex:1;max-width:420px;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 14px;transition:.15s}
+.bruma .search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.bruma .search svg{color:var(--accent-deep);flex-shrink:0}
+.bruma .search input{border:none;outline:none;background:none;font:inherit;font-size:14px;color:var(--ink);width:100%}
+.bruma .search input::placeholder{color:#a7a7a9}
+.bruma .toggle{display:inline-flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 14px;font-size:13.5px;color:var(--ink-soft);cursor:pointer;user-select:none;transition:.15s}
+.bruma .toggle:hover{background:var(--surface-2);color:var(--ink)}
+.bruma .toggle input{position:absolute;opacity:0;width:0;height:0}
+.bruma .toggle .sw{width:34px;height:19px;border-radius:20px;background:#d8d8d6;position:relative;transition:.18s;flex-shrink:0}
+.bruma .toggle .sw::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:.18s}
+.bruma .toggle input:checked + .sw{background:var(--accent)}
+.bruma .toggle input:checked + .sw::after{transform:translateX(15px)}
+
+/* ---------- roster (tabela) ---------- */
+/* flex-shrink:0: dentro do main flex-column, overflow-x:auto torna a .roster um
+   container de scroll (min-height automático = 0) e ela seria espremida a uma
+   fatia mínima em telas baixas (13-14"). Travar o encolhimento faz a PÁGINA
+   rolar normalmente, mantendo só o scroll horizontal interno quando a tabela
+   é mais larga que a área (ex.: financeiro, min-width:560px). */
+.bruma .roster{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto;flex-shrink:0}
+.bruma .roster table{width:100%;border-collapse:collapse;font-size:14px}
+.bruma .fin-panel ~ .roster table{min-width:560px}
+.bruma .roster thead th{
+  text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-soft);background:var(--surface-2);padding:13px 18px;border-bottom:1px solid var(--line);
+}
+.bruma .roster thead th.right{text-align:right}
+.bruma .roster tbody tr{border-top:1px solid var(--line-soft);transition:background .13s}
+.bruma .roster tbody tr:first-child{border-top:none}
+.bruma .roster tbody tr:hover{background:var(--bg)}
+.bruma .roster td{padding:14px 18px;vertical-align:middle;color:var(--ink)}
+.bruma .roster td.right{text-align:right}
+
+/* .cap-rows: histórico com altura travada em ~5 linhas + scroll próprio do
+   bloco (a página não cresce). Cabeçalho fica fixo (sticky) durante o scroll;
+   box-shadow no lugar de border-bottom porque borda colapsada não "gruda". */
+.bruma .roster.cap-rows{max-height:374px;overflow-y:auto}
+.bruma .roster.cap-rows thead th{position:sticky;top:0;z-index:1;box-shadow:inset 0 -1px 0 var(--line)}
+
+.bruma .who{display:flex;align-items:center;gap:13px}
+.bruma .mono{width:38px;height:38px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,#BBADA6,var(--accent-deep));display:grid;place-items:center;color:#fff;font-weight:600;font-size:13.5px;letter-spacing:.02em}
+.bruma .who .nm{font-weight:600;font-size:14.5px;color:var(--ink);line-height:1.15}
+.bruma .muted-cell{color:var(--ink-soft)}
+
+/* tile quadrado p/ entidades que não são pessoas (serviço, produto) */
+.bruma .tile{width:38px;height:38px;flex-shrink:0;border-radius:11px;background:var(--accent-soft);border:1px solid var(--line);display:grid;place-items:center;color:var(--accent-deep)}
+.bruma .tile svg{width:19px;height:19px}
+.bruma .price{font-variant-numeric:tabular-nums;font-weight:500}
+.bruma .dur{font-variant-numeric:tabular-nums;color:var(--ink-soft)}
+.bruma tr.inactive .tile{filter:grayscale(1);opacity:.6}
+
+/* status */
+.bruma .status{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;color:var(--ink)}
+.bruma .status .pt{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.bruma .status.off{color:var(--ink-soft)}
+.bruma .status.off .pt{background:#c2c2bf;box-shadow:none}
+
+/* ações */
+.bruma .acts{display:flex;align-items:center;justify-content:flex-end;gap:12px;white-space:nowrap}
+.bruma .acts a,.bruma .acts button{font:inherit;font-size:13.5px;font-weight:500;background:none;border:none;cursor:pointer;text-decoration:none;transition:.13s;padding:0}
+.bruma .acts .edit{color:var(--ink-soft)}
+.bruma .acts .edit:hover{color:var(--ink)}
+.bruma .acts .sep{color:var(--line);font-weight:400}
+.bruma .acts .danger{color:#9a6a62}
+.bruma .acts .danger:hover{color:#7d5049}
+.bruma .acts .reactivate{color:var(--accent-deep)}
+.bruma .acts .reactivate:hover{color:var(--ink)}
+.bruma .acts .add,.bruma .acts .sub{color:var(--accent-deep)}
+.bruma .acts .add:hover,.bruma .acts .sub:hover{color:var(--ink)}
+.bruma .acts .hist{color:var(--ink-soft)}
+.bruma .acts .hist:hover{color:var(--ink)}
+.bruma .acts form{display:inline}
+
+/* linha inativa */
+.bruma tr.inactive .mono{filter:grayscale(1);opacity:.7}
+.bruma tr.inactive .who .nm{color:var(--ink-soft)}
+.bruma tr.inactive td{color:var(--ink-soft)}
+
+.bruma .hint{font-size:12px;color:#a7a7a9;margin-top:14px;padding-left:2px}
+.bruma .empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius);padding:48px;text-align:center}
+.bruma .empty p{color:var(--ink-soft);margin-bottom:14px}
+
+/* ---------- produtos: estoque, alertas, histórico, modal ---------- */
+.bruma .stock{display:inline-flex;align-items:baseline;gap:5px}
+.bruma .stock .qty{font-variant-numeric:tabular-nums;font-weight:600;font-size:14.5px;color:var(--ink)}
+.bruma .stock .un{font-size:12.5px;color:var(--ink-soft)}
+.bruma .pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;letter-spacing:.02em;padding:3px 9px;border-radius:7px;margin-left:8px;vertical-align:middle}
+.bruma .pill.low{background:#F1E9DC;color:#917043;border:1px solid #E4D6BE}
+.bruma .pill.out{background:#F0E2DF;color:#8E5A50;border:1px solid #E4CEC8}
+
+.bruma .summary{display:flex;align-items:center;gap:26px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px 22px;margin-bottom:20px}
+.bruma .summary .item{display:flex;flex-direction:column;gap:2px}
+.bruma .summary .k{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+.bruma .summary .v{font-size:15px;color:var(--ink-soft)}
+.bruma .summary .v b{font-variant-numeric:tabular-nums;font-size:19px;font-weight:600;color:var(--ink);margin-right:3px}
+.bruma .summary .divv{width:1px;height:34px;background:var(--line)}
+.bruma .summary .alert{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:8px;background:#F1E9DC;color:#917043;border:1px solid #E4D6BE}
+
+.bruma .tipo-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:4px 11px;border-radius:8px}
+.bruma .tipo-pill .pt{width:6px;height:6px;border-radius:50%}
+.bruma .tipo-pill.in{background:#E5EBE3;color:#5C7158;border:1px solid #D4DDD0}
+.bruma .tipo-pill.in .pt{background:#5C7158}
+.bruma .tipo-pill.saida{background:#F1E6DB;color:#946A47;border:1px solid #E4D3BF}
+.bruma .tipo-pill.saida .pt{background:#946A47}
+.bruma .amt{font-variant-numeric:tabular-nums;font-weight:600;font-size:14.5px}
+.bruma .amt.in{color:#5C7158}
+.bruma .amt.out{color:#946A47}
+.bruma .amt .un{font-weight:500;font-size:12.5px;color:var(--ink-soft);margin-left:3px}
+.bruma .when{font-variant-numeric:tabular-nums}
+.bruma .obs{color:var(--ink-soft);font-size:13.5px}
+
+/* modal HTMX (movimentação de estoque) */
+.bruma .modal-backdrop{position:fixed;inset:0;z-index:50;background:rgba(40,40,42,.45);display:flex;align-items:flex-start;justify-content:center;padding-top:9vh}
+.bruma .modal-card{width:100%;max-width:560px;margin:0 16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 40px 80px -32px rgba(40,40,42,.55);position:relative;max-height:85vh;overflow:auto}
+.bruma .modal-close{position:absolute;top:14px;right:16px;width:32px;height:32px;display:grid;place-items:center;border:none;background:none;color:var(--ink-soft);font-size:24px;line-height:1;cursor:pointer;border-radius:8px;z-index:2}
+.bruma .modal-close:hover{background:var(--surface-2);color:var(--ink)}
+.bruma #modal-content,.bruma #fin-modal-content{padding:26px 28px}
+.bruma .modal-title{font-family:'Fraunces',serif;font-weight:500;font-size:22px;letter-spacing:-.3px}
+.bruma .modal-sub{font-size:13.5px;color:var(--ink-soft);margin-top:2px}
+.bruma .stockchip{display:inline-flex;align-items:baseline;gap:7px;margin:16px 0 20px;padding:9px 14px;border-radius:11px}
+.bruma .stockchip .lbl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase}
+.bruma .stockchip .qty{font-variant-numeric:tabular-nums;font-weight:700;font-size:18px}
+.bruma .stockchip .un{font-size:13px}
+.bruma .stockchip.in{background:#E6EBE5;border:1px solid #D5DED2}
+.bruma .stockchip.in .lbl,.bruma .stockchip.in .un{color:#5f7059}
+.bruma .stockchip.in .qty{color:#3f5239}
+.bruma .stockchip.out{background:#F1E6DB;border:1px solid #E4D3BF}
+.bruma .stockchip.out .lbl,.bruma .stockchip.out .un{color:#946A47}
+.bruma .stockchip.out .qty{color:#7a5436}
+.bruma .modal-card.wide{max-width:660px}
+
+/* ---------- agenda (calendário dia × profissional) ---------- */
+.bruma .agenda-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px}
+.bruma .nav-btn{width:38px;height:38px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;cursor:pointer;font-size:15px;transition:.15s;text-decoration:none}
+.bruma .nav-btn:hover{background:var(--surface-2)}
+.bruma .date-input{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px;color:var(--ink)}
+.bruma .date-input svg{color:var(--accent-deep)}
+.bruma .date-input input{border:none;outline:none;background:none;font:inherit;font-size:14px;color:var(--ink)}
+.bruma .calwrap{flex:1;min-height:0;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);scrollbar-width:thin;scrollbar-color:#cfcfcd var(--surface-2)}
+.bruma .calwrap::-webkit-scrollbar{width:10px;height:10px}
+.bruma .calwrap::-webkit-scrollbar-track{background:var(--surface-2)}
+.bruma .calwrap::-webkit-scrollbar-thumb{background:#cfcfcd;border-radius:6px;border:2px solid var(--surface-2)}
+.bruma .cal-grid{display:flex;min-width:max-content}
+.bruma .col-time{width:62px;flex-shrink:0;border-right:1px solid var(--line)}
+.bruma .col{flex:1;min-width:150px;border-right:1px solid var(--line)}
+.bruma .col:last-child{border-right:none}
+.bruma .cal-head{height:42px;position:sticky;top:0;z-index:11;background:var(--surface-2);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 12px}
+.bruma .cal-head.prof-header{cursor:grab;user-select:none}
+.bruma .cal-head .pname{font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bruma .track{position:relative}
+.bruma .hr{position:absolute;left:0;right:0;border-top:1px solid var(--line);height:30px}
+.bruma .hr.half{border-top:1px solid var(--line-soft)}
+.bruma .hr.slot{cursor:pointer}
+.bruma .hr.slot:hover{background:rgba(168,154,147,.10)}
+.bruma .col-time .hr{padding-left:8px}
+.bruma .col-time .hr span{font-size:11px;color:var(--ink-soft);position:relative;top:-7px}
+.bruma .col-time .hr.half span{font-size:10px;color:#c2c2bf}
+/* O card é um container de tamanho: a fonte do conteúdo escala com a dimensão
+   mais restrita (cqmin) — card mais baixo/estreito → fonte menor, com piso/teto
+   via clamp. Conteúdo alinhado à esquerda e centralizado na vertical. */
+.bruma .appt{position:absolute;left:5px;right:5px;background:var(--surface-2);border-left:3px solid var(--graphite);border-radius:7px;padding:5px 8px;overflow:hidden;cursor:pointer;z-index:10;transition:.13s;display:flex;flex-direction:column;justify-content:center;container-type:size}
+.bruma .appt:hover{background:#E3E3E1;box-shadow:var(--shadow)}
+.bruma .appt .appt-top{display:flex;align-items:baseline;gap:5px;line-height:1.15;overflow:hidden}
+.bruma .appt .c{font-size:clamp(9px,calc(10cqmin + 8px),14.5px);color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;text-align:left}
+.bruma .appt .s{font-size:clamp(8.5px,calc(9cqmin + 7.5px),13px);color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;text-align:left}
+.bruma .appt.short{padding:2px 8px}
+.bruma .appt.short .c{flex:0 0 auto;overflow:visible;text-overflow:clip}
+.bruma .appt.short .c.trunc{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.bruma .appt.short .s-inline{flex:0 0 auto;font-size:clamp(8.5px,calc(9cqmin + 7.5px),13px);color:var(--ink-soft);font-weight:400;white-space:nowrap}
+.bruma .appt.short .s-inline::before{content:"·";margin-right:5px;color:var(--ink-soft);font-weight:400}
+.bruma .appt.short .s-inline.hidden{display:none}
+.bruma .appt.muted{opacity:.55;filter:grayscale(1)}
+
+/* ---------- multi-select (Alpine) dos forms de agendamento ---------- */
+.bruma .ms-box{border:1px solid var(--line);border-radius:11px;background:var(--bg);padding:8px;min-height:46px;transition:.15s}
+.bruma .ms-box:focus-within{background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.bruma .ms-chips{display:flex;flex-wrap:wrap;gap:6px}
+.bruma .ms-chips:not(:empty){margin-bottom:6px}
+.bruma .ms-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:8px;font-size:12.5px;background:var(--accent-soft);color:var(--accent-deep);font-weight:500}
+.bruma .ms-chip.inactive{background:#F0E2DF;color:#8E5A50;font-style:italic}
+.bruma .ms-chip button{background:none;border:none;cursor:pointer;color:inherit;font-size:14px;line-height:1;padding:0;opacity:.7}
+.bruma .ms-chip button:hover{opacity:1}
+.bruma .ms-field{position:relative}
+.bruma .ms-field input{width:100%;border:none;outline:none;background:none;font:inherit;font-size:14px;color:var(--ink);padding:3px 4px}
+.bruma .ms-field input::placeholder{color:#a7a7a9}
+.bruma .ms-drop{position:absolute;left:0;right:0;margin-top:6px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);z-index:20;max-height:200px;overflow:auto}
+.bruma .ms-opt{padding:9px 12px;font-size:14px;cursor:pointer}
+.bruma .ms-opt:hover{background:var(--surface-2)}
+
+/* ---------- card de detalhe do agendamento ---------- */
+.bruma .ag-head h2{font-family:'Fraunces',serif;font-weight:500;font-size:22px;letter-spacing:-.3px;line-height:1.15}
+.bruma .ag-head .meta{font-size:13.5px;color:var(--ink-soft);margin-top:6px}
+.bruma .ag-head .meta b{color:var(--ink);font-weight:600}
+.bruma .ag-head .inativo{color:#8E5A50;font-style:italic;font-size:13px}
+.bruma .ag-sec{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:12px}
+.bruma .ag-sec h3{font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:10px;letter-spacing:.02em}
+.bruma .ag-sec .row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px}
+.bruma .ag-sec .lbl-sm{display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px}
+.bruma .ag-sec .control{padding:8px 11px;font-size:13.5px}
+.bruma .ag-sec .control.mini{width:auto;max-width:150px}
+.bruma .btn-sm{display:inline-flex;align-items:center;background:var(--graphite);color:#fff;border:none;border-radius:9px;padding:8px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+.bruma .btn-sm:hover{background:#222225}
+.bruma .ag-foot{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:16px;border-top:1px solid var(--line-soft)}
+.bruma .ag-foot a{color:var(--ink-soft);font-size:13.5px;font-weight:500;text-decoration:none}
+.bruma .ag-foot a:hover{color:var(--ink)}
+
+/* ---------- telas de acesso (login / setup) ---------- */
+.bruma.auth{justify-content:center;align-items:center;height:auto;min-height:100vh;overflow:auto;padding:32px 20px}
+.bruma .auth-card{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:34px 32px;text-align:center}
+.bruma .auth-card .field{text-align:left}
+.bruma .auth-card label.lbl{text-align:center}
+.bruma .auth-brand{text-align:center;margin-bottom:26px}
+.bruma .auth-brand .mark{font-family:'Fraunces',serif;font-weight:600;font-size:30px;color:var(--ink)}
+.bruma .auth-brand .mark em{color:var(--accent-deep);font-style:italic}
+.bruma .auth-brand .tag{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.28em;color:var(--ink-soft);margin-top:6px}
+.bruma .auth-card h2{font-family:'Fraunces',serif;font-weight:500;font-size:21px;margin-bottom:4px}
+.bruma .auth-card .sub{font-size:13.5px;color:var(--ink-soft);margin-bottom:20px}
+.bruma .btn-block{width:100%;justify-content:center;margin:0}
+
+/* ---------- banner sucesso + usuários (admin) ---------- */
+.bruma .banner-ok{background:#E6EBE5;border:1px solid #D5DED2;color:#3f5239;padding:12px 16px;border-radius:11px;margin-bottom:18px;font-size:14px}
+.bruma .page-sub{font-size:13.5px;color:var(--ink-soft);margin:-12px 0 20px}
+.bruma .card-title{font-family:'Fraunces',serif;font-weight:500;font-size:18px;margin-bottom:16px}
+.bruma .inline-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px}
+.bruma .inline-form .field{margin:0}
+.bruma .inline-form .control{min-width:170px}
+.bruma .control.xs{padding:7px 10px;font-size:13px;width:auto;max-width:160px;min-width:0}
+.bruma select.control{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236E6E72' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.bruma .u-name{font-weight:600;font-size:14.5px;color:var(--ink)}
+.bruma .u-handle{font-size:12px;color:var(--ink-soft)}
+.bruma .role-badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:7px;background:var(--accent-soft);color:var(--accent-deep)}
+.bruma .btn-outline{display:inline-flex;align-items:center;background:var(--surface);border:1px solid var(--line);color:var(--ink-soft);border-radius:9px;padding:7px 12px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:.13s;text-decoration:none}
+.bruma .btn-outline:hover{background:var(--surface-2);color:var(--ink)}
+.bruma .btn-outline.danger{color:#9a6a62}
+.bruma .btn-outline.danger:hover{background:#F0E2DF;color:#7d5049}
+.bruma .ar-alert{display:inline-block;width:7px;height:7px;margin-left:8px;border-radius:50%;background:var(--accent-deep);box-shadow:0 0 0 3px var(--accent-soft);vertical-align:middle}
+
+/* ---------- formulário ---------- */
+.bruma .frame{width:100%;max-width:640px;margin:0 auto}
+.bruma .crumb{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-soft);margin-bottom:18px}
+.bruma .crumb a{color:var(--ink-soft);text-decoration:none;transition:.13s}
+.bruma .crumb a:hover{color:var(--ink)}
+.bruma .crumb .sep{color:#c2c2bf}
+.bruma .crumb .cur{color:var(--ink);font-weight:500}
+.bruma .form-head{display:flex;align-items:center;gap:15px;margin-bottom:24px}
+.bruma .form-head .mono{width:52px;height:52px;font-size:18px;box-shadow:var(--shadow)}
+.bruma .form-head .tile{width:52px;height:52px;border-radius:14px;box-shadow:var(--shadow)}
+.bruma .form-head .tile svg{width:24px;height:24px}
+.bruma .form-head h1{font-family:'Fraunces',serif;font-weight:500;font-size:27px;letter-spacing:-.4px;line-height:1.1}
+.bruma .form-head .meta{font-size:13px;color:var(--ink-soft);margin-top:3px}
+.bruma .form-head .meta .pt{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);vertical-align:middle;margin-right:6px}
+.bruma .form-head .meta .pt.off{background:#c2c2bf;box-shadow:none}
+.bruma .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px}
+.bruma .field{margin-bottom:20px}
+.bruma .field:last-child{margin-bottom:0}
+.bruma .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.bruma .money-wrap{position:relative}
+.bruma .money-wrap .cur{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--ink-soft);pointer-events:none}
+.bruma .control.money{padding-left:38px}
+.bruma .control.short{max-width:200px}
+.bruma label.lbl{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:7px}
+.bruma label.lbl .req{color:var(--accent-deep)}
+.bruma .control{box-sizing:border-box;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px 14px;font:inherit;font-size:14.5px;color:var(--ink);transition:.15s}
+.bruma .control::placeholder{color:#a7a7a9}
+.bruma .control:focus{outline:none;background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.bruma textarea.control{resize:vertical;min-height:88px;line-height:1.5}
+.bruma .help{font-size:12px;color:var(--ink-soft);margin-top:6px}
+.bruma .actions{display:flex;align-items:center;gap:12px;margin-top:26px;padding-top:22px;border-top:1px solid var(--line-soft)}
+.bruma .actions .push{margin-left:auto}
+.bruma .btn-ghost{display:inline-flex;align-items:center;background:none;color:var(--ink-soft);border:none;border-radius:10px;padding:11px 16px;font:inherit;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;transition:.13s}
+.bruma .btn-ghost:hover{color:var(--ink)}
+.bruma .btn-danger{background:none;border:none;cursor:pointer;font:inherit;font-size:13.5px;font-weight:500;color:#9a6a62}
+.bruma .btn-danger:hover{color:#7d5049}
+
+/* ---------- financeiro ---------- */
+/* cores semânticas dessaturadas: sálvia = entrada/receita, clay = saída/despesa */
+.bruma .fin-panel{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:22px}
+.bruma .pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.bruma .pcard .top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.bruma .pcard .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center}
+.bruma .pcard.in .ic{background:#E6EBE5;color:#5C7158}
+.bruma .pcard.out .ic{background:#F1E6DB;color:#946A47}
+.bruma .pcard.net .ic{background:var(--surface-2);color:var(--ink)}
+.bruma .pcard .lbl{font-size:12.5px;color:var(--ink-soft);font-weight:500}
+.bruma .pcard .val{font-family:'Fraunces',serif;font-size:30px;font-weight:500;line-height:1;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.bruma .pcard.in .val{color:#5C7158}
+.bruma .pcard.out .val{color:#946A47}
+.bruma .pcard.net .val{color:var(--ink)}
+.bruma .pcard.net.neg .val{color:#946A47}
+.bruma .pcard .pmeta{font-size:12px;color:var(--ink-soft);margin-top:9px}
+.bruma .pcard .pmeta b{color:var(--ink);font-weight:600}
+
+/* toolbar do financeiro: stepper de mês + segmented + busca */
+.bruma .stepper{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:5px 8px}
+.bruma .stepper a{width:30px;height:30px;border:none;background:none;border-radius:8px;cursor:pointer;color:var(--ink-soft);display:grid;place-items:center;transition:.13s;text-decoration:none}
+.bruma .stepper a:hover{background:var(--surface-2);color:var(--ink)}
+.bruma .stepper .month{font-weight:600;font-size:14px;min-width:130px;text-align:center;text-transform:capitalize}
+.bruma .seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:4px;gap:2px}
+.bruma .seg button{border:none;background:none;font:inherit;font-size:13.5px;font-weight:500;color:var(--ink-soft);padding:7px 14px;border-radius:8px;cursor:pointer;transition:.13s}
+.bruma .seg button:hover{color:var(--ink)}
+.bruma .seg button.on{background:var(--graphite);color:#fff}
+
+/* livro de lançamentos */
+.bruma .date-cell{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-size:13px;white-space:nowrap}
+.bruma .desc{font-weight:600;font-size:14.5px;color:var(--ink);line-height:1.2}
+.bruma .desc .from{display:block;font-weight:400;font-size:12px;color:var(--ink-soft);margin-top:2px}
+.bruma .badge-fin{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px}
+.bruma .badge-fin .pt{width:6px;height:6px;border-radius:50%;background:currentColor}
+.bruma .badge-fin.receita{background:#E5EBE3;color:#5C7158}
+.bruma .badge-fin.despesa{background:#F1E6DB;color:#946A47}
+.bruma .amount{font-family:'Fraunces',serif;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bruma .amount.in{color:#5C7158}
+.bruma .amount.out{color:#946A47}
+.bruma .origem{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);white-space:nowrap}
+.bruma .origem svg{width:14px;height:14px;opacity:.8}
+
+/* segmented Receita/Despesa do form de lançamento */
+.bruma .typeseg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bruma .typeseg label{position:relative;cursor:pointer}
+.bruma .typeseg input{position:absolute;opacity:0;pointer-events:none}
+.bruma .typeseg .opt{display:flex;align-items:center;justify-content:center;gap:9px;padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--bg);font-weight:600;font-size:14.5px;color:var(--ink-soft);transition:.15s}
+.bruma .typeseg .opt svg{width:18px;height:18px}
+.bruma .typeseg label:hover .opt{border-color:var(--accent)}
+.bruma .typeseg input:checked + .opt.in{background:#E6EBE5;border-color:#5C7158;color:#5C7158}
+.bruma .typeseg input:checked + .opt.out{background:#F1E6DB;border-color:#946A47;color:#946A47}
+
+/* categorias (duas colunas) */
+.bruma .cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:880px}
+.bruma .col-fin{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.bruma .col-fin .col-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.bruma .col-fin .col-head .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center}
+.bruma .col-fin.in .col-head .ic{background:#E6EBE5;color:#5C7158}
+.bruma .col-fin.out .col-head .ic{background:#F1E6DB;color:#946A47}
+.bruma .col-fin .col-head h2{font-family:'Fraunces',serif;font-weight:500;font-size:19px}
+.bruma .col-fin .col-head .n{margin-left:auto;font-size:12.5px;color:var(--ink-soft)}
+.bruma .cat-row{display:flex;align-items:center;gap:12px;padding:13px 20px;border-top:1px solid var(--line-soft)}
+.bruma .cat-row .cdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.bruma .col-fin.in .cat-row .cdot{background:#5C7158}
+.bruma .col-fin.out .cat-row .cdot{background:#946A47}
+.bruma .cat-row .nm{flex:1;font-size:14px;font-weight:500;color:var(--ink)}
+.bruma .cat-row .use{font-size:12px;color:#bdbdbb}
+.bruma .cat-row form{display:inline}
+.bruma .cat-row .cacts{display:flex;align-items:center;gap:11px}
+.bruma .cat-row .cacts button{background:none;border:none;font:inherit;font-size:13px;font-weight:500;cursor:pointer;color:var(--ink-soft);padding:0}
+.bruma .cat-row .cacts button:hover{color:var(--ink)}
+.bruma .cat-row .cacts .rm:hover{color:#7d5049}
+.bruma .cat-add{display:flex;gap:8px;padding:14px 20px;border-top:1px solid var(--line-soft);background:var(--bg)}
+.bruma .cat-add input{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit;font-size:14px;color:var(--ink)}
+.bruma .cat-add input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.bruma .cat-add button{display:inline-flex;align-items:center;gap:6px;background:var(--graphite);color:#fff;border:none;border-radius:10px;padding:9px 14px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+.bruma .cat-add button:hover{background:#222225}
+
+/* modal de pagamento (na agenda) */
+.bruma .pay-eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#5C7158;font-weight:600;margin-bottom:8px}
+.bruma .pay-lines{border:1px solid var(--line);border-radius:13px;overflow:hidden;margin-bottom:18px}
+.bruma .pay-line{display:flex;align-items:center;gap:12px;padding:11px 15px;border-top:1px solid var(--line-soft);font-size:14px}
+.bruma .pay-line:first-child{border-top:none}
+.bruma .pay-line .nm{flex:1;color:var(--ink)}
+.bruma .pay-line .grp{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+.bruma .pay-line .pr{font-variant-numeric:tabular-nums;color:var(--ink-soft)}
+.bruma .pay-line.total{background:var(--bg);font-weight:600}
+.bruma .pay-line.total .pr{font-family:'Fraunces',serif;font-size:16px;color:#5C7158}
+.bruma .pay-line.sub-head{background:var(--surface-2)}
+
+/* ---------- pagamento + comanda: itens com desconto (R$/%) ---------- */
+.bruma .pay-items{border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.bruma .pay-item{padding:13px 15px;border-top:1px solid var(--line-soft)}
+.bruma .pay-item:first-child{border-top:none}
+.bruma .pay-item-row{display:flex;align-items:baseline;gap:12px}
+.bruma .pay-item-row .nm{flex:1;font-size:14px;font-weight:500;color:var(--ink)}
+.bruma .pay-item-row .net{font-family:'Fraunces',serif;font-weight:600;font-size:15.5px;color:var(--ink);font-variant-numeric:tabular-nums}
+.bruma .pay-item.has-disc .pay-item-row .net{color:#5C7158}
+.bruma .pay-disc{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+.bruma .pay-disc .lab{font-size:12px;color:var(--ink-soft)}
+.bruma .dseg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.bruma .dseg button{border:none;background:transparent;padding:5px 11px;font:inherit;font-size:12.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;transition:.12s}
+.bruma .dseg button + button{border-left:1px solid var(--line)}
+.bruma .dseg button.on{background:var(--graphite);color:#fff}
+.bruma .disc-input{width:80px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:6px 10px;font:inherit;font-size:13.5px;color:var(--ink);text-align:right}
+.bruma .disc-input:focus{outline:none;background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.bruma .pay-subline{margin-left:auto;font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums;text-align:right}
+.bruma .pay-subline .minus{color:#9a6a62;font-weight:600}
+.bruma .pay-rm{margin-left:10px;border:none;background:none;color:#9a6a62;font:inherit;font-size:12.5px;cursor:pointer;padding:4px 2px}
+.bruma .pay-rm:hover{text-decoration:underline}
+.bruma .pay-subtotal{display:flex;justify-content:space-between;align-items:center;padding:11px 4px 0;font-size:13px;color:var(--ink-soft)}
+.bruma .pay-subtotal b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.bruma .pay-addbar{display:flex;gap:10px;align-items:flex-end;margin:6px 0 12px}
+.bruma .pay-addbar .grow{flex:1;min-width:0}
+.bruma .pay-empty{font-size:12.5px;color:var(--ink-soft);padding:2px 2px 0}
+.bruma select.control option:disabled{color:#b9b9bb}
+.bruma .pay-summary{background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:14px 16px;margin-top:18px}
+.bruma .pay-summary .r{display:flex;justify-content:space-between;font-size:13.5px;color:var(--ink-soft);padding:4px 0;font-variant-numeric:tabular-nums}
+.bruma .pay-summary .r.desc span:last-child{color:#9a6a62;font-weight:600}
+.bruma .pay-summary .r.grand{border-top:1px solid var(--line);margin-top:6px;padding-top:11px;font-size:15px;color:var(--ink)}
+.bruma .pay-summary .r.grand b{font-family:'Fraunces',serif;font-size:20px;color:#5C7158}
+
+.bruma .ag-paid{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:4px 11px;border-radius:8px;background:#E5EBE3;color:#5C7158;border:1px solid #D4DDD0}
+
+/* ---------- Financeiro: abas Lançamentos|Comandas + lista de comandas ---------- */
+.bruma .fin-tabs{display:inline-flex;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:20px}
+.bruma .fin-tabs a{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:14px;font-weight:600;color:var(--ink-soft);padding:9px 18px;border-radius:9px;cursor:pointer;text-decoration:none;transition:.13s}
+.bruma .fin-tabs a:hover{color:var(--ink)}
+.bruma .fin-tabs a.on{background:var(--graphite);color:#fff;box-shadow:var(--shadow)}
+.bruma .fin-tabs a svg{width:16px;height:16px}
+.bruma .roster tr.comanda-row{cursor:pointer}
+.bruma .desc .sub{display:block;font-weight:400;font-size:12px;color:var(--ink-soft);margin-top:2px}
+.bruma .fin-chips{font-size:13px;color:var(--ink-soft)}
+.bruma .disc-badge{display:inline-flex;align-items:center;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:#F1E6DB;color:#9a6a62}
+
+/* comissões — linhas de serviço no modal de detalhe do profissional */
+.bruma .comr{display:flex;align-items:center;gap:14px;padding:11px 0;border-top:1px solid var(--line-soft)}
+.bruma .comr:first-child{border-top:none}
+.bruma .comr .d{font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--ink-soft);width:46px;flex-shrink:0}
+.bruma .comr .s{flex:1;min-width:0}
+.bruma .comr .s .sv{font-weight:600;font-size:14px;color:var(--ink)}
+.bruma .comr .s .cl{font-size:12px;color:var(--ink-soft)}
+.bruma .comr .v{font-variant-numeric:tabular-nums;font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap}
+.bruma .shared-tag{display:inline-block;margin-left:6px;font-size:10px;letter-spacing:.04em;color:var(--accent-deep);background:var(--accent-soft);border-radius:6px;padding:1px 6px;vertical-align:middle}
+.bruma .no-disc{color:#bdbdbb;font-size:13px}
+.bruma .see{font-size:13.5px;font-weight:600;color:var(--accent-deep);white-space:nowrap}
+.bruma tr.comanda-row:hover .see{color:var(--ink)}
+
+/* detalhe da comanda (modal) */
+.bruma .cmd-head h2{font-family:'Fraunces',serif;font-weight:500;font-size:22px;letter-spacing:-.3px;line-height:1.15}
+.bruma .cmd-head .meta{font-size:13.5px;color:var(--ink-soft);margin-top:6px}
+.bruma .cmd-head .meta b{color:var(--ink);font-weight:600}
+.bruma .cmd-eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#5C7158;font-weight:600;margin-bottom:8px}
+.bruma .cmd-seclbl{font-size:12.5px;font-weight:600;color:var(--ink);margin:16px 0 8px}
+.bruma .cmd-sub{font-size:12px;color:var(--ink-soft);margin-top:4px;font-variant-numeric:tabular-nums}
+.bruma .cmd-sub .minus{color:#9a6a62;font-weight:600}
+.bruma .cmd-foot{display:flex;align-items:center;gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line-soft)}
+.bruma .btn-danger-outline{margin-left:auto;display:inline-flex;align-items:center;gap:7px;background:none;color:#9a6a62;border:1px solid #E4CEC8;border-radius:10px;padding:10px 15px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:.13s}
+.bruma .btn-danger-outline:hover{background:#F0E2DF;color:#7d5049}
+.bruma .ag-paid svg{width:13px;height:13px}
+
+/* ===== HOME (painel inicial v1: saudação + próximos agendamentos) ===== */
+.bruma .home-wrap{width:100%;max-width:760px}
+.bruma .home-hello{margin-bottom:30px}
+.bruma .home-hello .eyebrow{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent-deep);font-weight:600;margin-bottom:10px}
+.bruma .home-hello h1{font-family:'Fraunces',serif;font-weight:500;font-size:38px;line-height:1.05;letter-spacing:-.5px}
+.bruma .home-hello h1 em{font-style:italic;color:var(--accent-deep)}
+.bruma .home-hello p{color:var(--ink-soft);margin-top:10px;font-size:15.5px}
+.bruma .home-hello p b{color:var(--ink);font-weight:600}
+.bruma .home-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:8px 24px 12px}
+.bruma .home-card-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:18px 0 14px;border-bottom:1px solid var(--line-soft)}
+.bruma .home-card-head h2{font-family:'Fraunces',serif;font-weight:500;font-size:21px;line-height:1.1}
+.bruma .home-card-head .home-sub{font-size:13px;color:var(--ink-soft);margin-top:4px}
+.bruma .home-link{color:var(--accent-deep);font-size:13.5px;font-weight:600;text-decoration:none;white-space:nowrap}
+.bruma .home-link:hover{text-decoration:underline}
+.bruma .home-appt{display:flex;align-items:center;gap:18px;padding:15px 0;border-top:1px solid var(--line-soft)}
+.bruma .home-appt:first-of-type{border-top:none}
+.bruma .home-appt .time{font-family:'Fraunces',serif;font-size:16.5px;font-weight:600;width:56px;flex-shrink:0;color:var(--ink)}
+.bruma .home-appt.next .time{color:var(--accent-deep)}
+.bruma .home-who{flex:1;min-width:0}
+.bruma .home-who .n{font-weight:600;font-size:14.5px;color:var(--ink);line-height:1.2}
+.bruma .home-who .s{font-size:13px;color:var(--ink-soft);margin-top:2px}
+.bruma .home-pro{font-size:13.5px;color:var(--ink-soft);white-space:nowrap}
+.bruma .home-empty{padding:30px 4px 22px;text-align:center;color:var(--ink-soft)}
+.bruma .home-empty svg{color:#cccac6;margin-bottom:12px}
+.bruma .home-empty p{font-size:14.5px}
+.bruma .home-empty .home-link{display:inline-block;margin-top:14px}
+
+@media (max-width:880px){
+  .bruma aside{display:none}
+  .bruma .hide-sm{display:none}
+  .bruma .roster td,.bruma .roster thead th{padding:12px 14px}
+  .bruma .card{padding:22px}
+  .bruma .grid2{grid-template-columns:1fr}
+  .bruma .fin-panel{grid-template-columns:1fr}
+  .bruma .cols{grid-template-columns:1fr}
+  .bruma .home-hello h1{font-size:30px}
+}
+
+/* ===========================================================
+   MOBILE (celular ≤760px) — escopo: só Login + Agenda.
+   A grade profissional×hora vira UMA linha do tempo vertical
+   por profissional (troca por chips). Reusa o modal único como
+   bottom-sheet e os mesmos endpoints HTMX (sem mudança no backend).
+   =========================================================== */
+.bruma .only-sm{display:none}
+.bruma .agenda-mobile{display:none}
+/* display fica a cargo do .only-sm (none no desktop, inline-flex no mobile);
+   aqui só o reset de margem do <form>. */
+.bruma .topbar-logout{margin:0}
+.bruma .iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--ink-soft);cursor:pointer;padding:0}
+.bruma .iconbtn:hover{background:var(--surface-2);color:var(--ink)}
+
+@media (max-width:760px){
+  /* topbar enxuto: marca + sair (a data fica na barra da agenda) */
+  .bruma header.topbar{padding:12px 16px;gap:12px}
+  .bruma .brand .tag{display:none}
+  .bruma .brand .mark{font-size:21px}
+  .bruma .topbar .right .date-pill{display:none}
+  .bruma .only-sm{display:inline-flex}
+
+  /* agenda full-bleed: esconde a grade desktop, mostra a timeline */
+  .bruma main.content[data-active="agendamentos"]{padding:0}
+  .bruma .dk-only{display:none}
+  .bruma .agenda-mobile{display:flex;flex-direction:column;flex:1;min-height:0}
+
+  /* controles fixos no topo do scroll (data + chips) */
+  .bruma .m-controls{position:sticky;top:0;z-index:8;background:var(--bg);border-bottom:1px solid var(--line)}
+  .bruma .m-datebar{display:flex;align-items:center;gap:10px;padding:12px 16px 10px}
+  .bruma .m-daynav{width:42px;height:42px;border-radius:13px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--ink);font-size:18px;text-decoration:none;flex-shrink:0}
+  .bruma .m-daynav:active{background:var(--surface-2)}
+  .bruma .m-day{flex:1;min-width:0;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;height:42px;border-radius:13px;border:1px solid var(--line);background:var(--surface)}
+  .bruma .m-day .w{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+  .bruma .m-day .d{font-family:'Fraunces',serif;font-weight:500;font-size:15.5px;color:var(--ink);line-height:1}
+  .bruma .m-day input[type=date]{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:none;cursor:pointer}
+
+  .bruma .m-pros{display:flex;gap:8px;overflow-x:auto;padding:2px 16px 12px;scrollbar-width:none}
+  .bruma .m-pros::-webkit-scrollbar{display:none}
+  .bruma .m-chip{flex-shrink:0;display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .bruma .m-chip .n{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--surface-2);color:var(--ink-soft);font-size:11.5px;font-weight:700}
+  .bruma .m-chip.on{background:var(--graphite);color:#fff;border-color:var(--graphite);box-shadow:var(--shadow)}
+  .bruma .m-chip.on .n{background:rgba(255,255,255,.16);color:#fff}
+  .bruma .m-chip.off{font-style:italic;color:#a7a7a9}
+
+  /* linha do tempo */
+  .bruma .m-timeline{position:relative;background:var(--surface);border-top:1px solid var(--line)}
+  .bruma .m-rail{position:absolute;left:0;top:0;width:46px;pointer-events:none}
+  .bruma .m-hour{position:absolute;left:0;width:46px;text-align:right;padding-right:10px}
+  .bruma .m-hour .h{font-family:'Fraunces',serif;font-size:15px;color:var(--ink-soft);line-height:1;display:inline-block;transform:translateY(-8px)}
+  .bruma .m-line{position:absolute;left:46px;right:10px;border-top:1px solid var(--line-soft)}
+  .bruma .m-line.full{border-top-color:var(--line)}
+  .bruma .m-track{position:absolute;top:0;bottom:0;left:46px;right:8px}
+  .bruma .m-slot{position:absolute;left:0;right:0;cursor:pointer;border-radius:10px}
+  .bruma .m-slot:active{background:var(--accent-soft)}
+  .bruma .m-appt{position:absolute;left:2px;right:0;min-height:26px;background:var(--surface-2);border-left:3px solid var(--graphite);border-radius:10px;padding:7px 11px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;justify-content:center;z-index:2}
+  .bruma .m-appt:active{background:#E3E3E1}
+  .bruma .m-appt .at{font-family:'Fraunces',serif;font-weight:600;font-size:12px;color:var(--accent-deep);line-height:1;margin-bottom:2px}
+  .bruma .m-appt .ac{font-size:14px;font-weight:600;color:var(--ink);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bruma .m-appt .as{font-size:12.5px;color:var(--ink-soft);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  .bruma .m-appt.compact{flex-direction:row;align-items:center;gap:7px;padding:4px 11px}
+  .bruma .m-appt.compact .at{margin:0}
+  .bruma .m-appt.compact .ac{flex:1}
+  .bruma .m-appt.compact .as{display:none}
+  .bruma .m-appt.muted{opacity:.55;filter:grayscale(1)}
+
+  /* linha "agora" — assinatura, em taupe */
+  .bruma .m-now{position:absolute;left:0;right:8px;z-index:6;pointer-events:none}
+  .bruma .m-now .bubble{position:absolute;left:4px;top:0;transform:translateY(-50%);font-family:'Fraunces',serif;font-weight:600;font-size:10.5px;color:#fff;background:var(--accent-deep);padding:2px 6px;border-radius:6px}
+  .bruma .m-now .dot{position:absolute;left:42px;top:0;width:8px;height:8px;border-radius:50%;background:var(--accent-deep);transform:translateY(-50%);box-shadow:0 0 0 4px rgba(168,154,147,.28)}
+  .bruma .m-now .line{position:absolute;left:46px;right:0;top:0;border-top:1.5px solid var(--accent-deep)}
+
+  /* FAB "Marcar" */
+  .bruma .m-fab{position:fixed;right:16px;bottom:16px;z-index:30;display:inline-flex;align-items:center;gap:9px;height:52px;padding:0 22px 0 18px;border-radius:999px;background:var(--graphite);color:#fff;border:none;font:inherit;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 18px 36px -14px rgba(40,40,42,.7)}
+  .bruma .m-fab svg{width:20px;height:20px}
+  .bruma .m-fab:active{background:#222225}
+
+  /* modal único vira bottom-sheet (vale p/ novo agendamento, detalhe e pagamento) */
+  .bruma .modal-backdrop{align-items:flex-end;padding:0}
+  .bruma .modal-card,.bruma .modal-card.wide{margin:0;width:100%;max-width:none;max-height:92vh;border-radius:24px 24px 0 0;animation:sheet-up .26s cubic-bezier(.32,.72,0,1)}
+  .bruma #modal-content,.bruma #fin-modal-content{padding:22px 18px calc(22px + env(safe-area-inset-bottom))}
+  @keyframes sheet-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+  /* login: respiro um pouco menor em tela estreita */
+  .bruma .auth-card{padding:28px 22px}
+}
+
+@media (max-width:760px) and (prefers-reduced-motion:reduce){
+  .bruma .modal-card,.bruma .modal-card.wide{animation:none}
+}

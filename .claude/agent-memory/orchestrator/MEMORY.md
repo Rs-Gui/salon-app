@@ -1,0 +1,6 @@
+- [Projeto SalaoApp](project_salao_app.md) — app local single-user (FastAPI+SQLModel+SQLite+Jinja+HTMX), spec em `implementação.md`, auth single-user adicionada como feature
+- [Alpine dispatch precisa de escopo](feedback_alpine_dispatch_scope.md) — `@click="$dispatch(...)"` é ignorado se não houver `x-data` ancestral; use vanilla `onclick="window.dispatchEvent(...)"` quando o listener for `.window`
+- [Alpine bindings precisam de x-data ancestral](feedback_alpine_bindings_precisam_xdata.md) — `:attr`, `x-text` e `$store` só funcionam dentro de árvore com `x-data` raiz; sem isso ficam markup inerte e o bug é silencioso (sem erro no console)
+- [Script no head não acessa document.body](feedback_script_no_head_documentbody.md) — `<script>` inline no `<head>` que chama `document.body.addEventListener` quebra silenciosamente porque `document.body` ainda é null; troque por `document.addEventListener` ou mova script pro fim do `<body>`
+- [click.away em dropdown irmão do input](feedback_click_away_irmao.md) — `@click.away` no dropdown dispara quando o usuário clica no input irmão; sempre colocar no container `.relative` que envolve input+dropdown
+- [Débitos técnicos](debitos_tecnicos.md) — índice de DTs aceitos do app (truncamento de observacoes, PRAGMA FK, concorrência denormalizada, migração futura para Financeiro)

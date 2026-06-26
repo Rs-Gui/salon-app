@@ -1,0 +1,109 @@
+{# Fragmento HTMX — detalhes / edição rápida de um agendamento. NÃO extends base. #}
+<div class="ag-head">
+  {% if cliente %}
+    <h2 class="serif">{{ cliente.nome }}{% if not cliente.ativo %} <span class="inativo">(inativo)</span>{% endif %}</h2>
+  {% else %}
+    <h2 class="serif" style="color:var(--ink-soft);font-style:italic">— Sem cliente —</h2>
+  {% endif %}
+
+  <div class="meta">
+    <b>Profissionais:</b>
+    {% if profissionais %}
+      {% for p in profissionais %}{%- if not loop.first %}, {% endif -%}
+        {{ p.nome }}{% if not p.ativo %} <span class="inativo">({{ "excluído" if p.excluido else "inativo" }})</span>{% endif %}
+      {% endfor %}
+    {% else %}—{% endif %}
+  </div>
+  <div class="meta">
+    <b>Serviços:</b>
+    {% if servicos %}
+      {% for s in servicos %}{%- if not loop.first %}, {% endif -%}
+        {%- if s.ativo -%}{{ s.nome }}{%- else -%}<span class="inativo">{{ s.nome }} (inativo)</span>{%- endif -%}
+      {% endfor %}
+    {% else %}—{% endif %}
+  </div>
+</div>
+
+{% if erro %}
+  <div class="banner-erro" style="margin-top:14px">{{ erro }}</div>
+{% endif %}
+
+{# ---------- Horário ---------- #}
+<div class="ag-sec">
+  <h3>Horário</h3>
+  <form class="row" hx-post="/agendamentos/{{ agendamento.id }}/horario" hx-target="#modal-content" hx-swap="innerHTML">
+    <div>
+      <label class="lbl-sm">Data</label>
+      <input class="control mini" type="date" name="data" value="{{ data_default }}" />
+    </div>
+    <div>
+      <label class="lbl-sm">Hora</label>
+      <input class="control mini" type="time" name="hora" value="{{ hora_default }}" />
+    </div>
+    <button type="submit" class="btn-sm">Atualizar horário</button>
+  </form>
+</div>
+
+{# ---------- Duração ---------- #}
+<div class="ag-sec">
+  <h3>Duração</h3>
+  <form class="row" hx-post="/agendamentos/{{ agendamento.id }}/duracao" hx-target="#modal-content" hx-swap="innerHTML">
+    <div>
+      <label class="lbl-sm">Minutos</label>
+      <input class="control mini" type="number" name="duracao_override" min="1" max="300"
+             placeholder="Calculada: {{ duracao_calculada }} min"
+             value="{{ duracao_default if duracao_default is not none else '' }}" />
+    </div>
+    <button type="submit" class="btn-sm">Atualizar duração</button>
+  </form>
+  <p class="help" style="margin-top:10px">
+    Duração efetiva atual: {{ duracao_efetiva }} min.
+    Deixe vazio para usar a duração calculada pelos serviços ({{ duracao_calculada }} min).
+  </p>
+</div>
+
+{# ---------- Observações ---------- #}
+{% if agendamento.observacoes %}
+  <div class="ag-sec">
+    <h3>Observações</h3>
+    <div style="font-size:13.5px;color:var(--ink);white-space:pre-line">{{ agendamento.observacoes }}</div>
+  </div>
+{% endif %}
+
+{# ---------- Pagamento ---------- #}
+<div class="ag-sec">
+  <h3>Pagamento</h3>
+  {% if pago %}
+    <div class="row" style="align-items:center">
+      <span class="ag-paid">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>
+        Pago · R$ {{ total_pago|brl }}
+      </span>
+      <form hx-post="/agendamentos/{{ agendamento.id }}/pagamento/estornar"
+            hx-target="#modal-content" hx-swap="innerHTML"
+            onsubmit="return confirm('Estornar o pagamento? As vendas de produtos voltam ao estoque.')">
+        <button type="submit" class="btn-danger">Estornar pagamento</button>
+      </form>
+    </div>
+    <p class="help" style="margin-top:10px">Lançado no Financeiro. Estornar remove os lançamentos e devolve os produtos vendidos ao estoque.</p>
+  {% else %}
+    <button type="button" class="btn-sm"
+            hx-get="/agendamentos/{{ agendamento.id }}/pagamento"
+            hx-target="#modal-content" hx-swap="innerHTML">
+      Registrar pagamento
+    </button>
+    <p class="help" style="margin-top:10px">Soma os serviços e produtos vendidos e gera a receita no Financeiro.</p>
+  {% endif %}
+</div>
+
+{# ---------- Rodapé ---------- #}
+<div class="ag-foot">
+  <a href="/agendamentos/{{ agendamento.id }}/editar">Editar tudo</a>
+  {# Excluir é restrito a admin/superadmin (reforçado no backend por requer_admin). #}
+  {% if request.session.get('papel') in ('admin', 'superadmin') %}
+  <form method="post" action="/agendamentos/{{ agendamento.id }}/excluir"
+        onsubmit="return confirm('Excluir este agendamento?')">
+    <button type="submit" class="btn-danger">Excluir</button>
+  </form>
+  {% endif %}
+</div>

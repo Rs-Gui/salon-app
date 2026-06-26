@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SalãoApp · Registrar pagamento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     AGENDA · MODAL registrar pagamento · Paleta BRUMA
+     v2 — DESCONTO POR ITEM. Cada serviço e cada produto pode ter
+     desconto individual em R$ ou %. Subtotais por seção + resumo
+     (total bruto, desconto total, total a receber). Produto sem
+     estoque aparece no seletor DESABILITADO ("sem estoque").
+     Persistência (backend): cada receita guarda valor_bruto,
+     desconto_valor e desconto_tipo — desconto fica rastreável.
+     "Pago = existe lançamento vinculado" — sem status na agenda.
+     =========================================================== */
+  :root{
+    --bg:        #F4F4F3;
+    --surface:   #FFFFFF;
+    --surface-2: #ECECEB;
+    --ink:       #28282A;
+    --ink-soft:  #6E6E72;
+    --line:      #E5E5E3;
+    --line-soft: #EFEFED;
+    --accent:    #A89A93;
+    --accent-deep:#8A7C75;
+    --accent-soft:#EAE5E2;
+    --graphite:  #38383B;
+    --in:        #5f7d63;
+    --in-soft:   #e7ede7;
+    --disc:      #94655c;   /* tom tijolo dessaturado p/ desconto */
+    --radius:    18px;
+    --shadow:    0 18px 40px -26px rgba(40,40,42,.30);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Hanken Grotesk',system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;height:100vh;overflow:hidden;
+  }
+  .serif{font-family:'Fraunces',Georgia,serif}
+
+  header.topbar{
+    display:flex;align-items:center;gap:24px;padding:18px 32px;
+    background:rgba(244,244,243,.9);border-bottom:1px solid var(--line);flex-shrink:0;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand .mark{font-family:'Fraunces',serif;font-weight:600;font-size:24px;color:var(--ink)}
+  .brand .mark em{color:var(--accent-deep);font-style:italic}
+  .brand .tag{font-size:11px;text-transform:uppercase;letter-spacing:.28em;color:var(--ink-soft)}
+  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:18px}
+  .date-pill{font-size:13px;color:var(--ink-soft)}
+  .date-pill b{color:var(--ink);font-weight:600}
+
+  .shell{display:flex;flex:1;min-height:0}
+  aside{width:248px;flex-shrink:0;padding:26px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--bg)}
+  .nav-label{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:#a7a7a9;padding:0 14px;margin-bottom:12px}
+  nav{display:flex;flex-direction:column;gap:2px}
+  .nav-item{display:flex;align-items:center;gap:13px;padding:11px 14px;border-radius:12px;color:var(--ink-soft);font-weight:500;font-size:14.5px;text-decoration:none;transition:.18s}
+  .nav-item svg{width:19px;height:19px;flex-shrink:0;opacity:.8}
+  .nav-item:hover{background:var(--surface-2);color:var(--ink)}
+  .nav-item.active{background:var(--graphite);color:#fff;box-shadow:var(--shadow)}
+  .nav-item.active svg{opacity:1}
+  .nav-item .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  aside .foot{margin-top:auto;padding-top:18px;border-top:1px solid var(--line)}
+  .logout{display:flex;align-items:center;gap:13px;padding:11px 14px;color:var(--ink-soft);font-size:14px;text-decoration:none;border-radius:12px}
+  .logout:hover{background:var(--surface-2);color:var(--accent-deep)}
+
+  main{flex:1;overflow:hidden;padding:28px 32px 0;display:flex;flex-direction:column}
+  .page-title{font-family:'Fraunces',serif;font-weight:500;font-size:26px;margin-bottom:16px;letter-spacing:-.3px}
+  .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px}
+  .nav-btn{width:38px;height:38px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;font-size:15px;text-decoration:none}
+  .date-input{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px;color:var(--ink)}
+  .date-input svg{color:var(--accent-deep)}
+  .date-label{font-weight:600;font-size:15px;color:var(--ink)}
+  .toolbar .btn-primary{margin-left:auto;display:inline-flex;align-items:center;gap:8px;background:var(--graphite);color:#fff;border:none;border-radius:10px;padding:10px 18px;font:inherit;font-size:14px;font-weight:600;box-shadow:var(--shadow)}
+
+  .cal-ph{flex:1;min-height:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex}
+  .ph-time{width:62px;flex-shrink:0;border-right:1px solid var(--line);padding-top:42px}
+  .ph-time .h{height:60px;padding-left:8px;font-size:11px;color:var(--ink-soft);border-top:1px solid var(--line-soft)}
+  .ph-col{flex:1;border-right:1px solid var(--line);min-width:120px}
+  .ph-col:last-child{border-right:none}
+  .ph-head{height:42px;background:var(--surface-2);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 12px;font-size:13.5px;font-weight:600;color:var(--ink)}
+  .ph-body{position:relative}
+  .ph-block{margin:10px 6px;border-radius:7px;background:var(--surface-2);border-left:3px solid var(--graphite);height:46px}
+  .ph-block.accent{background:var(--accent-soft);border-left-color:var(--accent-deep)}
+  .stage{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
+
+  /* backdrop + diálogo */
+  .backdrop{position:fixed;inset:0;background:rgba(40,40,42,.45);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px}
+  .dialog{
+    width:100%;max-width:540px;max-height:90vh;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 30px 80px -30px rgba(40,40,42,.55);
+    display:flex;flex-direction:column;overflow:hidden;position:relative;
+  }
+  .x{position:absolute;top:18px;right:18px;width:34px;height:34px;display:grid;place-items:center;border:none;background:var(--bg);color:var(--ink-soft);border-radius:9px;cursor:pointer;font-size:18px;line-height:1;transition:.13s;z-index:2}
+  .x:hover{background:var(--surface-2);color:var(--ink)}
+
+  .det-head{padding:24px 26px 18px;border-bottom:1px solid var(--line-soft);flex-shrink:0}
+  .eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--in);font-weight:600;margin-bottom:8px}
+  .det-head h2{font-family:'Fraunces',serif;font-weight:500;font-size:24px;letter-spacing:-.3px;line-height:1.1;padding-right:30px}
+  .det-meta{margin-top:9px;font-size:13.5px;color:var(--ink-soft)}
+  .det-meta b{color:var(--ink);font-weight:600}
+
+  .dialog-body{padding:20px 26px 24px;overflow:auto;flex:1}
+
+  label.lbl{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:8px}
+  label.lbl .opt{font-weight:400;color:var(--ink-soft)}
+
+  /* ---------- lista de itens (serviço/produto) com desconto ---------- */
+  .items{border:1px solid var(--line);border-radius:13px;overflow:hidden}
+  .item{padding:13px 15px;border-top:1px solid var(--line-soft)}
+  .item:first-child{border-top:none}
+  .item-row{display:flex;align-items:baseline;gap:12px}
+  .item-row .nm{flex:1;font-size:14px;font-weight:500;color:var(--ink)}
+  .item-row .net{font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .item.has-disc .net{color:var(--in)}
+
+  .item-disc{display:flex;align-items:center;gap:9px;margin-top:10px}
+  .item-disc .lab{font-size:12px;color:var(--ink-soft)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+  .seg button{border:none;background:transparent;padding:5px 11px;font:inherit;font-size:12.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;transition:.12s}
+  .seg button + button{border-left:1px solid var(--line)}
+  .seg button.on{background:var(--graphite);color:#fff}
+  .disc-input{width:78px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:6px 10px;font:inherit;font-size:13.5px;color:var(--ink);text-align:right}
+  .disc-input:focus{outline:none;background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .subline{margin-left:auto;font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums;text-align:right}
+  .subline .minus{color:var(--disc);font-weight:600}
+  .rm{margin-left:10px;border:none;background:none;color:var(--disc);font:inherit;font-size:12.5px;cursor:pointer;padding:4px 2px}
+  .rm:hover{text-decoration:underline}
+
+  .subtotal{display:flex;justify-content:space-between;align-items:center;padding:11px 4px 0;font-size:13px;color:var(--ink-soft)}
+  .subtotal b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+
+  /* ---------- barra adicionar produto ---------- */
+  .addbar{display:flex;gap:10px;align-items:flex-end;margin-bottom:12px}
+  .addbar .grow{flex:1;min-width:0}
+  .control{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:10px 13px;font:inherit;font-size:14px;color:var(--ink);transition:.15s}
+  .control:focus{outline:none;background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  select.control{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236E6E72' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:36px}
+  select.control option:disabled{color:#b9b9bb}
+  .control.qty{width:74px;text-align:center}
+  .lbl-sm{display:block;font-size:11px;color:var(--ink-soft);margin-bottom:5px;font-weight:500}
+  .btn-add{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:10px 15px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:.13s}
+  .btn-add:hover{background:var(--surface-2)}
+  .empty{font-size:12.5px;color:var(--ink-soft);padding:2px 2px 0}
+
+  /* ---------- resumo ---------- */
+  .summary{margin-top:20px;background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:14px 16px}
+  .summary .r{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;color:var(--ink-soft);padding:4px 0;font-variant-numeric:tabular-nums}
+  .summary .r.desc span:last-child{color:var(--disc);font-weight:600}
+  .summary .r.grand{border-top:1px solid var(--line);margin-top:6px;padding-top:11px;font-size:15px;color:var(--ink)}
+  .summary .r.grand b{font-family:'Fraunces',serif;font-size:21px;color:var(--in)}
+
+  .datarow{margin-top:16px;max-width:200px}
+  .datarow input{font-size:14px}
+  .help{font-size:12px;color:var(--ink-soft);margin-top:14px;line-height:1.5}
+
+  .foot{display:flex;align-items:center;gap:12px;margin-top:18px;padding-top:18px;border-top:1px solid var(--line-soft)}
+  .btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--graphite);color:#fff;border:none;border-radius:10px;padding:12px 22px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+  .btn-primary:hover{background:#222225}
+  .btn-ghost{background:none;color:var(--ink-soft);border:none;font:inherit;font-size:14px;font-weight:500;cursor:pointer;padding:12px 8px}
+  .btn-ghost:hover{color:var(--ink)}
+
+  @media (max-width:880px){ aside{display:none} }
+  @media (max-width:560px){
+    .item-disc{flex-wrap:wrap}
+    .subline{margin-left:0;width:100%;text-align:left}
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark">Salão<em>App</em></span>
+      <span class="tag">Gestão do salão</span>
+    </div>
+    <div class="right">
+      <div class="date-pill">Segunda, <b>22 de junho</b></div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside>
+      <div class="nav-label">Menu</div>
+      <nav>
+        <a class="nav-item active" href="agenda.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Agendamentos <span class="dot"></span></a>
+        <a class="nav-item" href="clientes.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg> Clientes</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg> Profissionais</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg> Serviços</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18l-1.5 12.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5z"/><path d="M8 7a4 4 0 0 1 8 0"/></svg> Produtos</a>
+        <a class="nav-item" href="financeiro.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg> Financeiro</a>
+      </nav>
+      <div class="foot">
+        <a class="logout" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Sair</a>
+      </div>
+    </aside>
+
+    <main>
+      <div class="page-title">Agenda</div>
+      <div class="toolbar">
+        <a class="nav-btn" href="#">&larr;</a>
+        <a class="nav-btn" href="#">&rarr;</a>
+        <div class="date-input">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          22/06/2026
+        </div>
+        <span class="date-label">Segunda, 22 de junho de 2026</span>
+        <button class="btn-primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg> Novo agendamento</button>
+      </div>
+      <div class="stage">
+        <div class="cal-ph">
+          <div class="ph-time"><div class="h">09:00</div><div class="h">10:00</div><div class="h">11:00</div><div class="h">12:00</div><div class="h">13:00</div></div>
+          <div class="ph-col"><div class="ph-head">Carla Bianchi</div><div class="ph-body"><div class="ph-block"></div><div class="ph-block accent"></div></div></div>
+          <div class="ph-col"><div class="ph-head">Renata Souza</div><div class="ph-body"><div class="ph-block accent"></div><div class="ph-block"></div></div></div>
+          <div class="ph-col"><div class="ph-head">Aline Ferreira</div><div class="ph-body"><div class="ph-block"></div></div></div>
+          <div class="ph-col"><div class="ph-head">Bruno Tavares</div><div class="ph-body"><div class="ph-block"></div></div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ MODAL REGISTRAR PAGAMENTO (v2 · desconto por item) ============ -->
+  <div class="backdrop">
+    <div class="dialog">
+      <button class="x" aria-label="Fechar">&times;</button>
+
+      <div class="det-head">
+        <div class="eyebrow">Registrar pagamento</div>
+        <h2 class="serif">Marina Costa</h2>
+        <div class="det-meta">Hoje, <b>09:00</b> · com <b>Carla Bianchi</b></div>
+      </div>
+
+      <div class="dialog-body">
+        <!-- ---------- SERVIÇOS (cada um com desconto) ---------- -->
+        <label class="lbl">Serviços do atendimento</label>
+        <div class="items" id="servicos">
+          <div class="item" data-preco="70" data-qtd="1">
+            <div class="item-row"><span class="nm">Corte</span><span class="net"></span></div>
+            <div class="item-disc">
+              <span class="lab">Desconto</span>
+              <div class="seg"><button type="button" class="on" data-tipo="brl">R$</button><button type="button" data-tipo="pct">%</button></div>
+              <input class="disc-input" type="text" inputmode="decimal" placeholder="0" value="7,00" />
+              <span class="subline"></span>
+            </div>
+          </div>
+          <div class="item" data-preco="50" data-qtd="1">
+            <div class="item-row"><span class="nm">Escova</span><span class="net"></span></div>
+            <div class="item-disc">
+              <span class="lab">Desconto</span>
+              <div class="seg"><button type="button" class="on" data-tipo="brl">R$</button><button type="button" data-tipo="pct">%</button></div>
+              <input class="disc-input" type="text" inputmode="decimal" placeholder="0" value="" />
+              <span class="subline"></span>
+            </div>
+          </div>
+        </div>
+        <div class="subtotal"><span>Subtotal serviços</span><b id="sub-serv">—</b></div>
+
+        <!-- ---------- PRODUTOS (opcional, cada um com desconto) ---------- -->
+        <label class="lbl" style="margin-top:20px">Produtos vendidos <span class="opt">(opcional)</span></label>
+        <div class="addbar">
+          <div class="grow">
+            <span class="lbl-sm">Produto</span>
+            <select class="control" id="prod-sel">
+              <option value="">Selecione…</option>
+              <option value="101" data-nome="Pomada Modeladora" data-preco="45" data-estoque="8">Pomada Modeladora — R$ 45,00 · 8 em estoque</option>
+              <option value="102" data-nome="Shampoo Anethun" data-preco="101" data-estoque="3">Shampoo Anethun — R$ 101,00 · 3 em estoque</option>
+              <option value="103" disabled>Óleo de Argan — sem estoque</option>
+            </select>
+          </div>
+          <div>
+            <span class="lbl-sm">Qtd</span>
+            <input class="control qty" id="prod-qtd" type="number" min="1" value="1" />
+          </div>
+          <button type="button" class="btn-add" id="add">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg> Adicionar
+          </button>
+        </div>
+        <div class="items" id="produtos">
+          <div class="item" data-id="101" data-preco="45" data-qtd="1">
+            <div class="item-row"><span class="nm">Pomada Modeladora (x1)</span><span class="net"></span></div>
+            <div class="item-disc">
+              <span class="lab">Desconto</span>
+              <div class="seg"><button type="button" data-tipo="brl">R$</button><button type="button" class="on" data-tipo="pct">%</button></div>
+              <input class="disc-input" type="text" inputmode="decimal" placeholder="0" value="10" />
+              <span class="subline"></span>
+              <button type="button" class="rm">remover</button>
+            </div>
+          </div>
+        </div>
+        <p class="empty" id="prod-empty" style="display:none">Nenhum produto adicionado.</p>
+        <div class="subtotal"><span>Subtotal produtos</span><b id="sub-prod">—</b></div>
+
+        <!-- ---------- RESUMO ---------- -->
+        <div class="summary">
+          <div class="r"><span>Total bruto</span><span id="tot-bruto">—</span></div>
+          <div class="r desc"><span>Descontos</span><span id="tot-desc">—</span></div>
+          <div class="r grand"><span>Total a receber</span><b id="tot-geral">—</b></div>
+        </div>
+
+        <div class="datarow">
+          <label class="lbl">Data</label>
+          <input class="control" type="date" value="2026-06-22" />
+        </div>
+
+        <p class="help">Cada item pode ter desconto em <b>R$</b> ou <b>%</b>. Ao salvar, vira receita no Financeiro — cada lançamento guarda <b>valor bruto, desconto e líquido</b>, então o desconto fica registrado no histórico. O agendamento passa a aparecer como <b>Pago</b>.</p>
+
+        <div class="foot">
+          <button class="btn-primary" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>
+            Registrar pagamento
+          </button>
+          <button class="btn-ghost" type="button">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  /* Mockup interativo — JS vanilla, sem dependências externas.
+     A versão real no app reproduz esta lógica em Alpine. */
+  const fmt = n => n.toFixed(2).replace('.', ',');
+  function parseNum(v){
+    v = (v || '').toString().trim();
+    if (v.indexOf(',') !== -1) v = v.replace(/\./g, '').replace(',', '.');
+    const n = parseFloat(v);
+    return isNaN(n) || n < 0 ? 0 : n;
+  }
+  function set(id, txt){ const el = document.getElementById(id); if (el) el.textContent = txt; }
+
+  function calcItem(item){
+    const preco = parseFloat(item.dataset.preco) || 0;
+    const qtd = parseInt(item.dataset.qtd) || 1;
+    const bruto = preco * qtd;
+    const tipo = item.querySelector('.seg .on').dataset.tipo;
+    const val = parseNum(item.querySelector('.disc-input').value);
+    let desc = tipo === 'pct' ? bruto * Math.min(val, 100) / 100 : Math.min(val, bruto);
+    desc = Math.round(desc * 100) / 100;
+    return { bruto, desc, net: Math.max(bruto - desc, 0) };
+  }
+
+  function recompute(){
+    let subServ = 0, subProd = 0, brutoTot = 0, descTot = 0;
+    document.querySelectorAll('.items').forEach(list => {
+      const isProd = list.id === 'produtos';
+      list.querySelectorAll('.item').forEach(item => {
+        const c = calcItem(item);
+        item.querySelector('.net').textContent = 'R$ ' + fmt(c.net);
+        const sub = item.querySelector('.subline');
+        if (c.desc > 0){
+          sub.innerHTML = 'de R$ ' + fmt(c.bruto) + ' · <span class="minus">− R$ ' + fmt(c.desc) + '</span>';
+          item.classList.add('has-disc');
+        } else {
+          sub.textContent = 'sem desconto';
+          item.classList.remove('has-disc');
+        }
+        brutoTot += c.bruto; descTot += c.desc;
+        if (isProd) subProd += c.net; else subServ += c.net;
+      });
+    });
+    set('sub-serv', 'R$ ' + fmt(subServ));
+    set('sub-prod', 'R$ ' + fmt(subProd));
+    set('tot-bruto', 'R$ ' + fmt(brutoTot));
+    set('tot-desc', descTot > 0 ? '− R$ ' + fmt(descTot) : 'R$ 0,00');
+    set('tot-geral', 'R$ ' + fmt(subServ + subProd));
+    const vazio = document.querySelectorAll('#produtos .item').length === 0;
+    document.getElementById('prod-empty').style.display = vazio ? 'block' : 'none';
+  }
+
+  // toggle R$/% e remover (delegação)
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.seg button');
+    if (b){
+      b.parentElement.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      recompute();
+      return;
+    }
+    const rm = e.target.closest('.rm');
+    if (rm){ rm.closest('.item').remove(); recompute(); }
+  });
+  document.addEventListener('input', e => {
+    if (e.target.classList.contains('disc-input')) recompute();
+  });
+
+  // adicionar produto (com merge por id e respeito ao estoque)
+  document.getElementById('add').addEventListener('click', () => {
+    const sel = document.getElementById('prod-sel');
+    const opt = sel.selectedOptions[0];
+    if (!opt || !opt.value) return;
+    const estoque = parseInt(opt.dataset.estoque) || 0;
+    let qtd = Math.max(parseInt(document.getElementById('prod-qtd').value) || 1, 1);
+    const existente = [...document.querySelectorAll('#produtos .item')].find(i => i.dataset.id === opt.value);
+    if (existente){
+      let q = (parseInt(existente.dataset.qtd) || 1) + qtd;
+      if (q > estoque) q = estoque;
+      existente.dataset.qtd = q;
+      existente.querySelector('.nm').textContent = opt.dataset.nome + ' (x' + q + ')';
+    } else {
+      let q = Math.min(qtd, estoque);
+      const el = document.createElement('div');
+      el.className = 'item';
+      el.dataset.id = opt.value; el.dataset.preco = opt.dataset.preco; el.dataset.qtd = q;
+      el.innerHTML =
+        '<div class="item-row"><span class="nm">' + opt.dataset.nome + ' (x' + q + ')</span><span class="net"></span></div>' +
+        '<div class="item-disc"><span class="lab">Desconto</span>' +
+        '<div class="seg"><button type="button" class="on" data-tipo="brl">R$</button><button type="button" data-tipo="pct">%</button></div>' +
+        '<input class="disc-input" type="text" inputmode="decimal" placeholder="0" value="" />' +
+        '<span class="subline"></span><button type="button" class="rm">remover</button></div>';
+      document.getElementById('produtos').appendChild(el);
+    }
+    sel.value = ''; document.getElementById('prod-qtd').value = 1;
+    recompute();
+  });
+
+  recompute();
+</script>
+</body>
+</html>

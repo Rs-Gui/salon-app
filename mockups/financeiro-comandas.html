@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SalãoApp · Financeiro · Comandas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     FINANCEIRO · COMANDAS · Paleta BRUMA
+     Aba "Comandas" dentro do Financeiro. Uma COMANDA = todos os
+     lançamentos de um mesmo agendamento, reagrupados: serviços +
+     produtos vendidos, com desconto por item. Histórico completo
+     (não preso a um mês) + busca por cliente/profissional.
+     Clicar numa comanda abre o DETALHE (cada item: bruto/desc/líq).
+     =========================================================== */
+  :root{
+    --bg:        #F4F4F3;
+    --surface:   #FFFFFF;
+    --surface-2: #ECECEB;
+    --ink:       #28282A;
+    --ink-soft:  #6E6E72;
+    --line:      #E5E5E3;
+    --line-soft: #EFEFED;
+    --accent:    #A89A93;
+    --accent-deep:#8A7C75;
+    --accent-soft:#EAE5E2;
+    --graphite:  #38383B;
+    --in:        #5f7d63;
+    --in-soft:   #e7ede7;
+    --out:       #9a6a62;
+    --out-soft:  #efe6e4;
+    --disc:      #94655c;
+    --radius:    18px;
+    --shadow:    0 18px 40px -26px rgba(40,40,42,.30);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Hanken Grotesk',system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;height:100vh;overflow:hidden;
+  }
+  .serif{font-family:'Fraunces',Georgia,serif}
+
+  header.topbar{display:flex;align-items:center;gap:24px;padding:18px 32px;background:rgba(244,244,243,.9);border-bottom:1px solid var(--line);flex-shrink:0}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand .mark{font-family:'Fraunces',serif;font-weight:600;font-size:24px;color:var(--ink)}
+  .brand .mark em{color:var(--accent-deep);font-style:italic}
+  .brand .tag{font-size:11px;text-transform:uppercase;letter-spacing:.28em;color:var(--ink-soft)}
+  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:18px}
+  .date-pill{font-size:13px;color:var(--ink-soft)}
+  .date-pill b{color:var(--ink);font-weight:600}
+
+  .shell{display:flex;flex:1;min-height:0}
+  aside{width:248px;flex-shrink:0;padding:26px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--bg)}
+  .nav-label{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:#a7a7a9;padding:0 14px;margin-bottom:12px}
+  nav{display:flex;flex-direction:column;gap:2px}
+  .nav-item{display:flex;align-items:center;gap:13px;padding:11px 14px;border-radius:12px;color:var(--ink-soft);font-weight:500;font-size:14.5px;text-decoration:none;transition:.18s}
+  .nav-item svg{width:19px;height:19px;flex-shrink:0;opacity:.8}
+  .nav-item:hover{background:var(--surface-2);color:var(--ink)}
+  .nav-item.active{background:var(--graphite);color:#fff;box-shadow:var(--shadow)}
+  .nav-item.active svg{opacity:1}
+  .nav-item .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  aside .foot{margin-top:auto;padding-top:18px;border-top:1px solid var(--line)}
+  .logout{display:flex;align-items:center;gap:13px;padding:11px 14px;color:var(--ink-soft);font-size:14px;text-decoration:none;border-radius:12px}
+  .logout:hover{background:var(--surface-2);color:var(--accent-deep)}
+
+  main{flex:1;overflow:auto;padding:28px 32px 40px;display:flex;flex-direction:column}
+  main{scrollbar-width:thin;scrollbar-color:#cfcfcd var(--bg)}
+  main::-webkit-scrollbar{width:10px}
+  main::-webkit-scrollbar-thumb{background:#cfcfcd;border-radius:6px;border:2px solid var(--bg)}
+
+  .page-head{display:flex;align-items:flex-end;gap:16px;margin-bottom:18px}
+  .page-title{font-family:'Fraunces',serif;font-weight:500;font-size:28px;letter-spacing:-.4px;line-height:1}
+  .count{font-size:13px;color:var(--ink-soft);padding-bottom:2px}
+  .count b{color:var(--ink);font-weight:600}
+
+  /* ---------- ABAS Lançamentos | Comandas ---------- */
+  .tabs{display:inline-flex;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:20px}
+  .tabs a{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:14px;font-weight:600;color:var(--ink-soft);padding:9px 18px;border-radius:9px;cursor:pointer;text-decoration:none;transition:.13s}
+  .tabs a:hover{color:var(--ink)}
+  .tabs a.on{background:var(--graphite);color:#fff;box-shadow:var(--shadow)}
+  .tabs a svg{width:16px;height:16px}
+
+  /* ---------- painel (3 cards adaptados a comandas) ---------- */
+  .panel{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:22px}
+  .pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
+  .pcard .top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .pcard .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--in-soft);color:var(--in)}
+  .pcard.neutral .ic{background:var(--surface-2);color:var(--ink)}
+  .pcard .lbl{font-size:12.5px;color:var(--ink-soft);font-weight:500}
+  .pcard .val{font-family:'Fraunces',serif;font-size:30px;font-weight:500;line-height:1;letter-spacing:-.3px}
+  .pcard.in .val{color:var(--in)}
+  .pcard .meta{font-size:12px;color:var(--ink-soft);margin-top:9px}
+  .pcard .meta b{color:var(--ink);font-weight:600}
+
+  /* ---------- toolbar período + busca ---------- */
+  .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:4px;gap:2px}
+  .seg button{border:none;background:none;font:inherit;font-size:13.5px;font-weight:500;color:var(--ink-soft);padding:7px 14px;border-radius:8px;cursor:pointer;transition:.13s}
+  .seg button:hover{color:var(--ink)}
+  .seg button.on{background:var(--graphite);color:#fff}
+  .search{flex:1;min-width:200px;max-width:360px;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 14px;transition:.15s}
+  .search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .search svg{color:var(--accent-deep);flex-shrink:0}
+  .search input{border:none;outline:none;background:none;font:inherit;font-size:14px;color:var(--ink);width:100%}
+  .search input::placeholder{color:#a7a7a9}
+
+  /* ---------- tabela de comandas ---------- */
+  .roster{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  thead th{text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);background:var(--surface-2);padding:13px 18px;border-bottom:1px solid var(--line)}
+  thead th.right{text-align:right}
+  tbody tr.comanda{border-top:1px solid var(--line-soft);transition:background .13s;cursor:pointer}
+  tbody tr.comanda:first-child{border-top:none}
+  tbody tr.comanda:hover{background:var(--bg)}
+  td{padding:14px 18px;vertical-align:middle;color:var(--ink)}
+  td.right{text-align:right}
+  .date-cell{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-size:13px;white-space:nowrap}
+  .desc{font-weight:600;font-size:14.5px;color:var(--ink);line-height:1.2}
+  .desc .from{display:block;font-weight:400;font-size:12px;color:var(--ink-soft);margin-top:2px}
+  .chips{font-size:13px;color:var(--ink-soft)}
+  .disc-badge{display:inline-flex;align-items:center;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--out-soft);color:var(--disc)}
+  .no-disc{color:#bdbdbb;font-size:13px}
+  .amount{font-family:'Fraunces',serif;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--in)}
+  .see{font-size:13.5px;font-weight:600;color:var(--accent-deep);white-space:nowrap}
+  tr.comanda:hover .see{color:var(--ink)}
+  #sem-result td{color:var(--ink-soft);text-align:center;padding:26px}
+  .hint{font-size:12px;color:#a7a7a9;margin-top:14px;padding-left:2px}
+
+  /* ---------- MODAL detalhe da comanda ---------- */
+  .backdrop{position:fixed;inset:0;background:rgba(40,40,42,.45);z-index:50;display:none;align-items:center;justify-content:center;padding:24px}
+  .backdrop.open{display:flex}
+  .dialog{width:100%;max-width:520px;max-height:90vh;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 30px 80px -30px rgba(40,40,42,.55);display:flex;flex-direction:column;overflow:hidden;position:relative}
+  .x{position:absolute;top:18px;right:18px;width:34px;height:34px;display:grid;place-items:center;border:none;background:var(--bg);color:var(--ink-soft);border-radius:9px;cursor:pointer;font-size:18px;line-height:1;z-index:2}
+  .x:hover{background:var(--surface-2);color:var(--ink)}
+  .det-head{padding:24px 26px 18px;border-bottom:1px solid var(--line-soft);flex-shrink:0}
+  .eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--in);font-weight:600;margin-bottom:8px}
+  .det-head h2{font-family:'Fraunces',serif;font-weight:500;font-size:24px;letter-spacing:-.3px;line-height:1.1;padding-right:30px}
+  .det-meta{margin-top:9px;font-size:13.5px;color:var(--ink-soft)}
+  .det-meta b{color:var(--ink);font-weight:600}
+  .dialog-body{padding:18px 26px 24px;overflow:auto;flex:1}
+
+  .sec-lbl{font-size:12.5px;font-weight:600;color:var(--ink);margin:4px 0 8px}
+  .dlist{border:1px solid var(--line);border-radius:13px;overflow:hidden;margin-bottom:8px}
+  .dline{padding:12px 15px;border-top:1px solid var(--line-soft)}
+  .dline:first-child{border-top:none}
+  .dl-row{display:flex;align-items:baseline;gap:12px}
+  .dl-row .nm{flex:1;font-size:14px;font-weight:500;color:var(--ink)}
+  .dl-row .net{font-family:'Fraunces',serif;font-weight:600;font-size:15.5px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .dline.has-disc .net{color:var(--in)}
+  .dl-sub{font-size:12px;color:var(--ink-soft);margin-top:4px;font-variant-numeric:tabular-nums}
+  .dl-sub .minus{color:var(--disc);font-weight:600}
+  .subtotal{display:flex;justify-content:space-between;padding:8px 4px 16px;font-size:13px;color:var(--ink-soft)}
+  .subtotal b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+
+  .summary{background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:14px 16px;margin-top:4px}
+  .summary .r{display:flex;justify-content:space-between;font-size:13.5px;color:var(--ink-soft);padding:4px 0;font-variant-numeric:tabular-nums}
+  .summary .r.desc span:last-child{color:var(--disc);font-weight:600}
+  .summary .r.grand{border-top:1px solid var(--line);margin-top:6px;padding-top:11px;font-size:15px;color:var(--ink)}
+  .summary .r.grand b{font-family:'Fraunces',serif;font-size:21px;color:var(--in)}
+
+  .foot{display:flex;align-items:center;gap:12px;margin-top:18px;padding-top:18px;border-top:1px solid var(--line-soft)}
+  .btn-ghost{background:none;color:var(--ink-soft);border:none;font:inherit;font-size:14px;font-weight:600;cursor:pointer;padding:11px 6px}
+  .btn-ghost:hover{color:var(--ink)}
+  .btn-danger{margin-left:auto;display:inline-flex;align-items:center;gap:7px;background:none;color:var(--disc);border:1px solid var(--out-soft);border-radius:10px;padding:11px 16px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:.13s}
+  .btn-danger:hover{background:var(--out-soft)}
+
+  @media (max-width:980px){ aside{display:none} .panel{grid-template-columns:1fr} .hide-sm{display:none} td,thead th{padding:12px 14px} }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="mark">Salão<em>App</em></span><span class="tag">Gestão do salão</span></div>
+    <div class="right"><div class="date-pill">Segunda, <b>22 de junho</b></div></div>
+  </header>
+
+  <div class="shell">
+    <aside>
+      <div class="nav-label">Menu</div>
+      <nav>
+        <a class="nav-item" href="agenda.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Agendamentos</a>
+        <a class="nav-item" href="clientes.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg> Clientes</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg> Profissionais</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg> Serviços</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18l-1.5 12.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5z"/><path d="M8 7a4 4 0 0 1 8 0"/></svg> Produtos</a>
+        <a class="nav-item active" href="financeiro.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg> Financeiro <span class="dot"></span></a>
+      </nav>
+      <div class="foot"><a class="logout" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Sair</a></div>
+    </aside>
+
+    <main>
+      <div class="page-head">
+        <h1 class="page-title serif">Financeiro</h1>
+        <span class="count"><b>5</b> comandas no histórico</span>
+      </div>
+
+      <!-- ABAS -->
+      <div class="tabs">
+        <a href="financeiro.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg> Lançamentos</a>
+        <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg> Comandas</a>
+      </div>
+
+      <!-- PAINEL -->
+      <section class="panel">
+        <div class="pcard in">
+          <div class="top"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="lbl">Faturado (comandas)</div></div>
+          <div class="val">R$ 1.123,50</div>
+          <div class="meta">Serviços <b>R$ 893</b> · Produtos <b>R$ 230,50</b></div>
+        </div>
+        <div class="pcard neutral">
+          <div class="top"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div><div class="lbl">Comandas</div></div>
+          <div class="val">5</div>
+          <div class="meta">Descontos concedidos <b>R$ 31,50</b></div>
+        </div>
+        <div class="pcard neutral">
+          <div class="top"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg></div><div class="lbl">Ticket médio</div></div>
+          <div class="val">R$ 224,70</div>
+          <div class="meta">Por atendimento pago</div>
+        </div>
+      </section>
+
+      <!-- TOOLBAR -->
+      <div class="toolbar">
+        <div class="seg">
+          <button class="on">Tudo</button>
+          <button>Este mês</button>
+          <button>30 dias</button>
+        </div>
+        <label class="search">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="busca" type="text" placeholder="Buscar por cliente ou profissional" />
+        </label>
+      </div>
+
+      <!-- COMANDAS -->
+      <div class="roster">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:100px">Data</th>
+              <th>Cliente</th>
+              <th class="hide-sm">Itens</th>
+              <th class="hide-sm">Desconto</th>
+              <th class="right">Total</th>
+              <th class="right" style="width:70px"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <p class="hint">Cada comanda agrupa os lançamentos de um atendimento pago (serviços + produtos). Clique para ver o detalhe item a item. O histórico não se limita ao mês — use a busca e o filtro de período.</p>
+    </main>
+  </div>
+
+  <!-- ============ MODAL DETALHE DA COMANDA ============ -->
+  <div class="backdrop" id="modal">
+    <div class="dialog">
+      <button class="x" id="fechar" aria-label="Fechar">&times;</button>
+      <div class="det-head">
+        <div class="eyebrow">Comanda</div>
+        <h2 class="serif" id="m-cliente">—</h2>
+        <div class="det-meta" id="m-meta">—</div>
+      </div>
+      <div class="dialog-body" id="m-body"></div>
+    </div>
+  </div>
+
+<script>
+  const fmt = n => n.toFixed(2).replace('.', ',');
+
+  // Histórico completo (datas em vários meses, p/ mostrar que não é mês a mês)
+  const comandas = [
+    { id:1, data:'22/06/26', dataISO:'2026-06-22', cliente:'Marina Costa', prof:'Carla Bianchi', hora:'09:00',
+      servicos:[{nome:'Corte',bruto:70,desc:7,tipo:'brl'},{nome:'Escova',bruto:50,desc:0}],
+      produtos:[{nome:'Pomada Modeladora',qtd:1,bruto:45,desc:4.5,tipo:'pct',pct:10}] },
+    { id:2, data:'20/06/26', dataISO:'2026-06-20', cliente:'Patrícia Lemos', prof:'Renata Souza', hora:'14:30',
+      servicos:[{nome:'Coloração',bruto:180,desc:0},{nome:'Hidratação',bruto:80,desc:0}],
+      produtos:[] },
+    { id:3, data:'18/06/26', dataISO:'2026-06-18', cliente:'João Mendes', prof:'Bruno Tavares', hora:'11:00',
+      servicos:[{nome:'Corte masculino',bruto:60,desc:0}],
+      produtos:[{nome:'Shampoo Anethun',qtd:1,bruto:101,desc:20,tipo:'brl'},{nome:'Óleo de Argan',qtd:1,bruto:69,desc:0}] },
+    { id:4, data:'12/05/26', dataISO:'2026-05-12', cliente:'— Sem cliente —', prof:'Aline Ferreira', hora:'16:00',
+      servicos:[{nome:'Manicure',bruto:45,desc:0}],
+      produtos:[] },
+    { id:5, data:'28/04/26', dataISO:'2026-04-28', cliente:'Beatriz Nunes', prof:'Carla Bianchi', hora:'10:30',
+      servicos:[{nome:'Corte',bruto:70,desc:0},{nome:'Escova',bruto:50,desc:0}],
+      produtos:[{nome:'Máscara Reparadora',qtd:2,bruto:160,desc:0}] },
+  ];
+
+  function totais(c){
+    let bruto=0, desc=0, serv=0, prod=0;
+    c.servicos.forEach(s=>{ bruto+=s.bruto; desc+=s.desc; serv+=(s.bruto-s.desc); });
+    c.produtos.forEach(p=>{ const b=p.bruto; bruto+=b; desc+=p.desc; prod+=(b-p.desc); });
+    return { bruto, desc, serv, prod, total:serv+prod };
+  }
+  function resumoItens(c){
+    const ns=c.servicos.length, np=c.produtos.reduce((a,p)=>a+(p.qtd||1),0);
+    const parts=[];
+    if(ns) parts.push(ns+' serviço'+(ns>1?'s':''));
+    if(np) parts.push(np+' produto'+(np>1?'s':''));
+    return parts.join(' · ') || '—';
+  }
+
+  // ---- tabela ----
+  function renderTabela(filtro){
+    const tb=document.getElementById('tbody');
+    const q=(filtro||'').trim().toLowerCase();
+    const rows=comandas.filter(c=> !q || (c.cliente+' '+c.prof).toLowerCase().indexOf(q)!==-1);
+    if(!rows.length){ tb.innerHTML='<tr id="sem-result"><td colspan="6">Nenhuma comanda encontrada.</td></tr>'; return; }
+    tb.innerHTML = rows.map(c=>{
+      const t=totais(c);
+      const badge = t.desc>0 ? '<span class="disc-badge">− R$ '+fmt(t.desc)+'</span>' : '<span class="no-disc">—</span>';
+      return '<tr class="comanda" data-id="'+c.id+'">'
+        + '<td class="date-cell">'+c.data+'</td>'
+        + '<td><span class="desc">'+c.cliente+'<span class="from">com '+c.prof+'</span></span></td>'
+        + '<td class="hide-sm"><span class="chips">'+resumoItens(c)+'</span></td>'
+        + '<td class="hide-sm">'+badge+'</td>'
+        + '<td class="right"><span class="amount">R$ '+fmt(t.total)+'</span></td>'
+        + '<td class="right"><span class="see">Ver ›</span></td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  // ---- detalhe (modal) ----
+  function lineHTML(it){
+    const net=it.bruto-it.desc;
+    const qtd = it.qtd ? ' (x'+it.qtd+')' : '';
+    let sub;
+    if(it.desc>0){
+      const tag = it.tipo==='pct' ? ' ('+it.pct+'%)' : '';
+      sub = '<div class="dl-sub">de R$ '+fmt(it.bruto)+' · <span class="minus">− R$ '+fmt(it.desc)+tag+'</span></div>';
+    } else { sub = '<div class="dl-sub">sem desconto</div>'; }
+    return '<div class="dline'+(it.desc>0?' has-disc':'')+'">'
+      + '<div class="dl-row"><span class="nm">'+it.nome+qtd+'</span><span class="net">R$ '+fmt(net)+'</span></div>'
+      + sub + '</div>';
+  }
+  function abrir(id){
+    const c=comandas.find(x=>x.id===id); if(!c) return;
+    const t=totais(c);
+    document.getElementById('m-cliente').textContent=c.cliente;
+    document.getElementById('m-meta').innerHTML=c.data.replace(/\//g,'/')+' · <b>'+c.hora+'</b> · com <b>'+c.prof+'</b>';
+    let html='';
+    html+='<div class="sec-lbl">Serviços</div><div class="dlist">'+c.servicos.map(lineHTML).join('')+'</div>';
+    html+='<div class="subtotal"><span>Subtotal serviços</span><b>R$ '+fmt(t.serv)+'</b></div>';
+    if(c.produtos.length){
+      html+='<div class="sec-lbl">Produtos vendidos</div><div class="dlist">'+c.produtos.map(lineHTML).join('')+'</div>';
+      html+='<div class="subtotal"><span>Subtotal produtos</span><b>R$ '+fmt(t.prod)+'</b></div>';
+    }
+    html+='<div class="summary">'
+      + '<div class="r"><span>Total bruto</span><span>R$ '+fmt(t.bruto)+'</span></div>'
+      + '<div class="r desc"><span>Descontos</span><span>'+(t.desc>0?'− R$ '+fmt(t.desc):'R$ 0,00')+'</span></div>'
+      + '<div class="r grand"><span>Total recebido</span><b>R$ '+fmt(t.total)+'</b></div></div>';
+    html+='<div class="foot"><button class="btn-ghost" id="fechar2">Fechar</button>'
+      + '<button class="btn-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg> Estornar pagamento</button></div>';
+    document.getElementById('m-body').innerHTML=html;
+    document.getElementById('modal').classList.add('open');
+  }
+  function fechar(){ document.getElementById('modal').classList.remove('open'); }
+
+  document.getElementById('tbody').addEventListener('click', e=>{
+    const tr=e.target.closest('tr.comanda'); if(tr) abrir(parseInt(tr.dataset.id));
+  });
+  document.getElementById('modal').addEventListener('click', e=>{ if(e.target.id==='modal') fechar(); });
+  document.getElementById('fechar').addEventListener('click', fechar);
+  document.getElementById('m-body').addEventListener('click', e=>{ if(e.target.id==='fechar2') fechar(); });
+  document.getElementById('busca').addEventListener('input', e=> renderTabela(e.target.value));
+  // filtro período (visual no mockup)
+  document.querySelectorAll('.seg button').forEach(b=> b.addEventListener('click', ()=>{
+    document.querySelectorAll('.seg button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  }));
+
+  renderTabela('');
+</script>
+</body>
+</html>

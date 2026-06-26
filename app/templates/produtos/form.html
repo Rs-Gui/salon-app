@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% set edicao = eh_edicao %}
+
+<div class="frame">
+  <div class="crumb">
+    <a href="/produtos/">Produtos</a>
+    <span class="sep">/</span>
+    <span class="cur">{{ 'Editar produto' if edicao else 'Novo produto' }}</span>
+  </div>
+
+  <div class="form-head">
+    <div>
+      <h1 class="serif">{{ produto.nome if edicao else 'Novo produto' }}</h1>
+      {% if edicao %}
+        <div class="meta">
+          <span class="pt {{ '' if produto.ativo else 'off' }}"></span>
+          {{ 'Produto ativo' if produto.ativo else 'Produto inativo' }}
+          · {{ produto.estoque_atual }} {{ produto.unidade }} em estoque
+        </div>
+      {% else %}
+        <div class="meta">Preencha os dados e o estoque inicial.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if erro %}
+    <div class="banner-erro">{{ erro }}</div>
+  {% endif %}
+
+  <div class="card">
+    <form id="prod-form" method="post" action="{{ action }}">
+      <div class="field">
+        <label class="lbl" for="nome">Nome <span class="req">*</span></label>
+        <input class="control" id="nome" type="text" name="nome" required maxlength="200"
+               value="{{ produto.nome or '' }}" placeholder="Ex.: Shampoo Hidratante" />
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label class="lbl" for="preco_venda">Preço de venda</label>
+          <div class="money-wrap">
+            <span class="cur">R$</span>
+            <input class="control money" id="preco_venda" type="text" name="preco_venda" inputmode="decimal"
+                   placeholder="0,00" value="{{ preco_venda_input }}" />
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl" for="custo">Custo</label>
+          <div class="money-wrap">
+            <span class="cur">R$</span>
+            <input class="control money" id="custo" type="text" name="custo" inputmode="decimal"
+                   placeholder="0,00" value="{{ custo_input }}" />
+          </div>
+        </div>
+      </div>
+
+      {% if not edicao %}
+        <div class="grid2">
+          <div class="field">
+            <label class="lbl" for="estoque_atual">Estoque inicial</label>
+            <input class="control" id="estoque_atual" type="number" name="estoque_atual" min="0" step="1"
+                   placeholder="0" value="{{ estoque_atual_input }}" />
+            <p class="help">Em unidades.</p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="estoque_minimo">Estoque mínimo</label>
+            <input class="control" id="estoque_minimo" type="number" name="estoque_minimo" min="0" step="1"
+                   placeholder="0" value="{{ estoque_minimo_input }}" />
+            <p class="help">Deixe 0 para não receber alertas de estoque baixo.</p>
+          </div>
+        </div>
+      {% else %}
+        <div class="field">
+          <label class="lbl" for="estoque_minimo">Estoque mínimo</label>
+          <input class="control short" id="estoque_minimo" type="number" name="estoque_minimo" min="0" step="1"
+                 placeholder="0" value="{{ estoque_minimo_input }}" />
+          <p class="help">Deixe 0 para não receber alertas de estoque baixo. Estoque atual ({{ produto.estoque_atual }} {{ produto.unidade }}) só muda via “Adicionar” / “Retirar” na lista.</p>
+        </div>
+      {% endif %}
+
+      <div class="field">
+        <label class="lbl" for="observacoes">Observações</label>
+        <textarea class="control" id="observacoes" name="observacoes" rows="3"
+                  placeholder="Fornecedor, lote, modo de uso…">{{ produto.observacoes or '' }}</textarea>
+      </div>
+    </form>
+
+    <div class="actions">
+      <button class="btn-primary" type="submit" form="prod-form" style="margin:0">Salvar</button>
+      <a class="btn-ghost" href="/produtos/">Cancelar</a>
+      {% if edicao %}
+        <form class="push" method="post"
+              action="/produtos/{{ produto.id }}/{{ 'desativar' if produto.ativo else 'reativar' }}"
+              {% if produto.ativo %}onsubmit="return confirm('Desativar este produto?')"{% endif %}>
+          <button type="submit" class="btn-danger">
+            {{ 'Desativar produto' if produto.ativo else 'Reativar produto' }}
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

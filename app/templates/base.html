@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SalãoApp</title>
+  <script src="/static/vendor/tailwind.js"></script>
+  <script src="/static/vendor/htmx.min.js"></script>
+  <script src="/static/vendor/sortable.min.js"></script>
+  <script defer src="/static/vendor/alpine.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/bruma.css?v={{ asset_version('bruma.css') }}">
+  <style>
+    [x-cloak]{display:none !important}
+
+    /* Scrollbar bege/stone — usada por telas ainda não migradas (ex.: modal de produtos) */
+    .scroll-bege { scrollbar-width: thin; scrollbar-color: #cfcfcd #ECECEB; }
+    .scroll-bege::-webkit-scrollbar { width: 10px; height: 10px; }
+    .scroll-bege::-webkit-scrollbar-track { background: #ECECEB; }
+    .scroll-bege::-webkit-scrollbar-thumb { background: #cfcfcd; border-radius: 6px; border: 2px solid #ECECEB; }
+    .scroll-bege::-webkit-scrollbar-thumb:hover { background: #b7b7b4; }
+  </style>
+  <script>
+    // Permite que HTMX troque o conteúdo mesmo em respostas 400/422 (usado para
+    // re-renderizar formulários parciais com mensagens de erro).
+    document.addEventListener('htmx:beforeSwap', function (evt) {
+      if (evt.detail.xhr.status === 400 || evt.detail.xhr.status === 422) {
+        evt.detail.shouldSwap = true;
+        evt.detail.isError = false;
+      }
+    });
+
+    // Componente Alpine reutilizável para multi-select com chips + busca.
+    // Usado em _form_modal.html e form_edit.html (profissionais e serviços).
+    // Catálogo: [{id, nome, nomeLower, ativo, duracao?}, ...].
+    // Opções: { catalogo, selecionados, inputName, mostrarDuracao, onChange? }.
+    window.multiselect = function (opts) {
+      return {
+        catalogo: opts.catalogo || [],
+        selecionados: Array.isArray(opts.selecionados)
+          ? opts.selecionados.slice().filter(function (x) { return x !== null && x !== undefined && x !== ''; })
+          : [],
+        inputName: opts.inputName,
+        mostrarDuracao: !!opts.mostrarDuracao,
+        single: !!opts.single,
+        busca: '',
+        aberto: false,
+        _onChange: typeof opts.onChange === 'function' ? opts.onChange : null,
+        init() {
+          if (this._onChange) this._onChange(this.sugestao);
+        },
+        _porId(id) {
+          return this.catalogo.find(function (i) { return i.id === id; });
+        },
+        ativo(id) {
+          const it = this._porId(id);
+          return it ? it.ativo : true;
+        },
+        rotulo(id) {
+          const it = this._porId(id);
+          if (!it) return '#' + id;
+          let txt = it.nome;
+          if (this.mostrarDuracao && typeof it.duracao === 'number') {
+            txt += ' (' + it.duracao + ' min)';
+          }
+          if (it.excluido) txt += ' (excluído)';
+          else if (!it.ativo) txt += ' (inativo)';
+          return txt;
+        },
+        adicionar(id) {
+          if (this.single) {
+            this.selecionados = [id];
+            if (this._onChange) this._onChange(this.sugestao);
+          } else if (!this.selecionados.includes(id)) {
+            this.selecionados.push(id);
+            if (this._onChange) this._onChange(this.sugestao);
+          }
+          this.busca = '';
+          this.aberto = false;
+        },
+        remover(id) {
+          this.selecionados = this.selecionados.filter(function (x) { return x !== id; });
+          if (this._onChange) this._onChange(this.sugestao);
+        },
+        get filtrados() {
+          const b = (this.busca || '').trim().toLowerCase();
+          const sel = this.selecionados;
+          return this.catalogo.filter(function (it) {
+            if (!it.ativo) return false;
+            if (sel.includes(it.id)) return false;
+            if (!b) return true;
+            return it.nomeLower.includes(b);
+          });
+        },
+        get sugestao() {
+          if (!this.mostrarDuracao) return '—';
+          const self = this;
+          const durs = this.selecionados
+            .map(function (id) { const it = self._porId(id); return it && typeof it.duracao === 'number' ? it.duracao : null; })
+            .filter(function (d) { return d !== null; });
+          if (!durs.length) return '—';
+          return Math.max.apply(null, durs);
+        },
+      };
+    };
+
+    // Store global para compartilhar a "sugestão de duração" entre o multiselect
+    // de serviços e o input de duração (que estão em escopos Alpine irmãos).
+    document.addEventListener('alpine:init', function () {
+      window.Alpine.store('agServicos', { sugestao: '—' });
+    });
+
+    // Componente Alpine do modal de pagamento (agenda) — desconto por item.
+    // Global (como multiselect) para já existir quando o Alpine inicializa o
+    // fragmento _pagamento_modal.html injetado via HTMX.
+    window.pagamento = function (cfg) {
+      return {
+        servicos: (cfg.servicos || []).map(function (s) {
+          return { id: s.id, nome: s.nome, preco: s.preco, descTipo: 'brl', descValor: '' };
+        }),
+        produtos: cfg.produtos || [],   // catálogo (com estoque)
+        linhas: [],                     // produtos adicionados ao carrinho
+        sel: '',
+        qtd: 1,
+        parseMoney(str) {
+          if (typeof str !== 'string') str = String(str || '');
+          str = str.trim();
+          if (str.indexOf(',') !== -1) str = str.replace(/\./g, '').replace(',', '.');
+          var n = parseFloat(str);
+          return isNaN(n) || n < 0 ? 0 : n;
+        },
+        descontoDe(bruto, tipo, valor) {
+          var v = this.parseMoney(valor);
+          var d = tipo === 'pct' ? bruto * Math.min(v, 100) / 100 : Math.min(v, bruto);
+          d = Math.round(d * 100) / 100;
+          if (d < 0) d = 0;
+          if (d > bruto) d = bruto;
+          return d;
+        },
+        brutoLinha(l) { return l.preco * l.qtd; },
+        descServicoVal(s) { return this.descontoDe(s.preco, s.descTipo, s.descValor); },
+        descLinhaVal(l) { return this.descontoDe(this.brutoLinha(l), l.descTipo, l.descValor); },
+        netServico(s) { return Math.max(s.preco - this.descServicoVal(s), 0); },
+        netLinha(l) { return Math.max(this.brutoLinha(l) - this.descLinhaVal(l), 0); },
+        get subServicos() {
+          var self = this;
+          return this.servicos.reduce(function (a, s) { return a + self.netServico(s); }, 0);
+        },
+        get subProdutos() {
+          var self = this;
+          return this.linhas.reduce(function (a, l) { return a + self.netLinha(l); }, 0);
+        },
+        get brutoTotal() {
+          var self = this;
+          return this.servicos.reduce(function (a, s) { return a + s.preco; }, 0)
+               + this.linhas.reduce(function (a, l) { return a + self.brutoLinha(l); }, 0);
+        },
+        get descTotal() {
+          var self = this;
+          return this.servicos.reduce(function (a, s) { return a + self.descServicoVal(s); }, 0)
+               + this.linhas.reduce(function (a, l) { return a + self.descLinhaVal(l); }, 0);
+        },
+        get totalGeral() { return this.subServicos + this.subProdutos; },
+        produtoById(id) {
+          return this.produtos.find(function (p) { return p.id === id; });
+        },
+        adicionar() {
+          var id = this.sel;
+          var q = parseInt(this.qtd, 10);
+          if (!id || !q || q < 1) return;
+          var prod = this.produtoById(id);
+          if (!prod || prod.estoque <= 0) return;
+          var existente = this.linhas.find(function (l) { return l.id === id; });
+          var atual = existente ? existente.qtd : 0;
+          var add = q;
+          if (atual + add > prod.estoque) add = prod.estoque - atual;
+          if (add < 1) return;
+          if (existente) existente.qtd += add;
+          else this.linhas.push({ id: prod.id, nome: prod.nome, preco: prod.preco, qtd: add, descTipo: 'brl', descValor: '' });
+          this.sel = '';
+          this.qtd = 1;
+        },
+        remover(i) { this.linhas.splice(i, 1); },
+        fmt(n) { return (n || 0).toFixed(2).replace('.', ','); },
+      };
+    };
+  </script>
+</head>
+<body class="bruma">
+  <header class="topbar">
+    <a class="brand" href="/" style="text-decoration:none">
+      <span class="mark">Salão<em>App</em></span>
+      <span class="tag">Gestão do salão</span>
+    </a>
+    <div class="right">
+      <span class="date-pill" id="bruma-hoje"></span>
+      {# Sair no celular: a sidebar (com o botão Sair) fica escondida em telas estreitas. #}
+      <form method="post" action="/logout" class="only-sm topbar-logout">
+        <button type="submit" class="iconbtn" aria-label="Sair" title="Sair">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside>
+      <div class="nav-label">Menu</div>
+      <nav>
+        <a class="nav-item {% if active == 'agendamentos' %}active{% endif %}" href="/agendamentos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Agendamentos {% if active == 'agendamentos' %}<span class="dot"></span>{% endif %}
+        </a>
+        <a class="nav-item {% if active == 'clientes' %}active{% endif %}" href="/clientes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+          Clientes {% if active == 'clientes' %}<span class="dot"></span>{% endif %}
+        </a>
+        <a class="nav-item {% if active == 'profissionais' %}active{% endif %}" href="/profissionais">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg>
+          Profissionais {% if active == 'profissionais' %}<span class="dot"></span>{% endif %}
+        </a>
+        <a class="nav-item {% if active == 'servicos' %}active{% endif %}" href="/servicos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg>
+          Serviços {% if active == 'servicos' %}<span class="dot"></span>{% endif %}
+        </a>
+        <a class="nav-item {% if active == 'produtos' %}active{% endif %}" href="/produtos/">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18l-1.5 12.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5z"/><path d="M8 7a4 4 0 0 1 8 0"/></svg>
+          Produtos {% if active == 'produtos' %}<span class="dot"></span>{% endif %}
+        </a>
+        <a class="nav-item {% if active == 'financeiro' %}active{% endif %}" href="/financeiro/">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg>
+          Financeiro {% if active == 'financeiro' %}<span class="dot"></span>{% endif %}
+        </a>
+        {% if request.session.get('papel') in ('admin', 'superadmin') %}
+        <a class="nav-item {% if active == 'usuarios' %}active{% endif %}" href="/usuarios">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.3 2.9-5 6.5-5s6.5 1.7 6.5 5"/><path d="M17 9.5a3 3 0 0 0 0-5.5M21.5 20c0-2.6-1.6-4.2-4-4.8"/></svg>
+          Usuários {% if active == 'usuarios' %}<span class="dot"></span>{% endif %}
+        </a>
+        {% endif %}
+      </nav>
+
+      <div class="foot">
+        {% if request.session.get('nome_usuario') %}
+        <div class="who-conn">
+          Conectado como
+          <b>{{ request.session.get('nome_exibicao') or request.session.get('nome_usuario') }}</b>
+          {% if request.session.get('papel') == 'superadmin' %}<span class="badge">super admin</span>
+          {% elif request.session.get('papel') == 'admin' %}<span class="badge">admin</span>{% endif %}
+        </div>
+        {% endif %}
+        <form method="post" action="/logout">
+          <button type="submit" class="logout">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            Sair
+          </button>
+        </form>
+      </div>
+    </aside>
+
+    <main class="content" data-active="{{ active }}">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script>
+    // Data de hoje na topbar (client-side — sem backend).
+    (function () {
+      var el = document.getElementById('bruma-hoje');
+      if (!el) return;
+      var d = new Date();
+      var dia = d.toLocaleDateString('pt-BR', { weekday: 'long' });
+      dia = dia.charAt(0).toUpperCase() + dia.slice(1);
+      var resto = d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
+      el.innerHTML = dia + ', <b>' + resto + '</b>';
+    })();
+  </script>
+</body>
+</html>

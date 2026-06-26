@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% set edicao = servico.id is not none %}
+
+<div class="frame">
+  <div class="crumb">
+    <a href="/servicos/">Serviços</a>
+    <span class="sep">/</span>
+    <span class="cur">{{ 'Editar serviço' if edicao else 'Novo serviço' }}</span>
+  </div>
+
+  <div class="form-head">
+    <div>
+      <h1 class="serif">{{ servico.nome if edicao else 'Novo serviço' }}</h1>
+      {% if edicao %}
+        <div class="meta">
+          <span class="pt {{ '' if servico.ativo else 'off' }}"></span>
+          {{ 'Serviço ativo' if servico.ativo else 'Serviço inativo' }}
+          · {{ servico.duracao_minutos }} min · R$ {{ "%.2f"|format(servico.preco or 0)|replace(".", ",") }}
+        </div>
+      {% else %}
+        <div class="meta">Defina nome, preço e duração do serviço.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if erro %}
+    <div class="banner-erro">{{ erro }}</div>
+  {% endif %}
+
+  <div class="card">
+    <form id="serv-form" method="post" action="{{ action }}">
+      <div class="field">
+        <label class="lbl" for="nome">Nome <span class="req">*</span></label>
+        <input class="control" id="nome" type="text" name="nome" required maxlength="200"
+               value="{{ servico.nome or '' }}" placeholder="Ex.: Corte Feminino" />
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label class="lbl" for="preco">Preço</label>
+          <div class="money-wrap">
+            <span class="cur">R$</span>
+            <input class="control money" id="preco" type="text" name="preco" inputmode="decimal"
+                   placeholder="0,00" value="{{ preco_input }}" />
+          </div>
+          <p class="help">Use vírgula como separador decimal (ex.: 25,00).</p>
+        </div>
+        <div class="field">
+          <label class="lbl" for="duracao_minutos">Duração em minutos <span class="req">*</span></label>
+          <input class="control" id="duracao_minutos" type="number" name="duracao_minutos" required
+                 min="15" max="300" step="1" placeholder="30" value="{{ duracao_input }}" />
+          <p class="help">Entre 15 e 300 minutos.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="observacoes">Observações</label>
+        <textarea class="control" id="observacoes" name="observacoes" rows="3"
+                  placeholder="Detalhes do serviço…">{{ servico.observacoes or '' }}</textarea>
+      </div>
+    </form>
+
+    <div class="actions">
+      <button class="btn-primary" type="submit" form="serv-form" style="margin:0">Salvar</button>
+      <a class="btn-ghost" href="/servicos/">Cancelar</a>
+      {% if edicao %}
+        <form class="push" method="post"
+              action="/servicos/{{ servico.id }}/{{ 'desativar' if servico.ativo else 'reativar' }}"
+              {% if servico.ativo %}onsubmit="return confirm('Desativar este serviço?')"{% endif %}>
+          <button type="submit" class="btn-danger">
+            {{ 'Desativar serviço' if servico.ativo else 'Reativar serviço' }}
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

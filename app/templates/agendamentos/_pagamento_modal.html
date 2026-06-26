@@ -1,0 +1,149 @@
+{# Fragmento HTMX — registrar pagamento com desconto por item. NÃO extends base.
+   x-data em ASPAS SIMPLES: tojson escapa ' (não ") — em aspas duplas o JSON
+   quebraria o atributo. Ver gotcha do projeto. #}
+<div x-data='pagamento({ servicos: {{ servs_json | tojson }}, produtos: {{ produtos_json | tojson }} })'>
+
+  <div class="ag-head">
+    <div class="pay-eyebrow">Registrar pagamento</div>
+    {% if cliente %}
+      <h2 class="serif">{{ cliente.nome }}</h2>
+    {% else %}
+      <h2 class="serif" style="color:var(--ink-soft);font-style:italic">— Sem cliente —</h2>
+    {% endif %}
+    <div class="meta">
+      {{ hora }}
+      {%- if profissionais %} · com
+        {% for p in profissionais %}{%- if not loop.first %}, {% endif -%}<b>{{ p.nome }}</b>{% endfor %}
+      {%- endif %}
+    </div>
+  </div>
+
+  {% if erro %}
+    <div class="banner-erro" style="margin-top:14px">{{ erro }}</div>
+  {% endif %}
+
+  <form hx-post="/agendamentos/{{ agendamento.id }}/pagamento"
+        hx-target="#modal-content" hx-swap="innerHTML" style="margin-top:14px">
+
+    {# ---------- Serviços do atendimento (desconto por item) ---------- #}
+    <label class="lbl">Serviços do atendimento</label>
+    {% if servs_json %}
+      <div class="pay-items">
+        <template x-for="(s, i) in servicos" :key="s.id">
+          <div class="pay-item" :class="{ 'has-disc': descServicoVal(s) > 0 }">
+            <div class="pay-item-row">
+              <span class="nm" x-text="s.nome"></span>
+              <span class="net" x-text="'R$ ' + fmt(netServico(s))"></span>
+            </div>
+            <div class="pay-disc">
+              <span class="lab">Desconto</span>
+              <div class="dseg">
+                <button type="button" :class="{ on: s.descTipo === 'brl' }" @click="s.descTipo = 'brl'">R$</button>
+                <button type="button" :class="{ on: s.descTipo === 'pct' }" @click="s.descTipo = 'pct'">%</button>
+              </div>
+              <input class="disc-input" type="text" inputmode="decimal" name="servico_desc_valor"
+                     x-model="s.descValor" placeholder="0" />
+              <span class="pay-subline" x-show="descServicoVal(s) > 0">
+                de R$ <span x-text="fmt(s.preco)"></span> ·
+                <span class="minus">− R$ <span x-text="fmt(descServicoVal(s))"></span></span>
+              </span>
+              <span class="pay-subline" x-show="descServicoVal(s) === 0" style="color:#bdbdbb">sem desconto</span>
+              <input type="hidden" name="servico_id" :value="s.id" />
+              <input type="hidden" name="servico_desc_tipo" :value="s.descTipo" />
+            </div>
+          </div>
+        </template>
+      </div>
+      <div class="pay-subtotal"><span>Subtotal serviços</span><b x-text="'R$ ' + fmt(subServicos)"></b></div>
+    {% else %}
+      <p class="pay-empty">Sem serviços vinculados a este agendamento.</p>
+    {% endif %}
+
+    {# ---------- Produtos vendidos (opcional, desconto por item) ---------- #}
+    <label class="lbl" style="margin-top:20px">Produtos vendidos <span style="font-weight:400;color:var(--ink-soft)">(opcional)</span></label>
+    {% if produtos_json %}
+      <div class="pay-addbar">
+        <div class="grow">
+          <label class="lbl-sm">Produto</label>
+          <select class="control" x-model.number="sel">
+            <option value="">Selecione…</option>
+            <template x-for="p in produtos" :key="p.id">
+              <option :value="p.id" :disabled="p.estoque <= 0"
+                      x-text="p.estoque > 0 ? (p.nome + ' — R$ ' + fmt(p.preco) + ' · ' + p.estoque + ' em estoque') : (p.nome + ' — sem estoque')"></option>
+            </template>
+          </select>
+        </div>
+        <div>
+          <label class="lbl-sm">Qtd</label>
+          <input class="control mini" type="number" min="1" x-model.number="qtd" style="max-width:80px" />
+        </div>
+        <button type="button" class="btn-sm" @click="adicionar()">Adicionar</button>
+      </div>
+
+      <template x-if="linhas.length">
+        <div class="pay-items">
+          <template x-for="(l, i) in linhas" :key="i">
+            <div class="pay-item" :class="{ 'has-disc': descLinhaVal(l) > 0 }">
+              <div class="pay-item-row">
+                <span class="nm" x-text="l.nome + ' (x' + l.qtd + ')'"></span>
+                <span class="net" x-text="'R$ ' + fmt(netLinha(l))"></span>
+              </div>
+              <div class="pay-disc">
+                <span class="lab">Desconto</span>
+                <div class="dseg">
+                  <button type="button" :class="{ on: l.descTipo === 'brl' }" @click="l.descTipo = 'brl'">R$</button>
+                  <button type="button" :class="{ on: l.descTipo === 'pct' }" @click="l.descTipo = 'pct'">%</button>
+                </div>
+                <input class="disc-input" type="text" inputmode="decimal" name="produto_desc_valor"
+                       x-model="l.descValor" placeholder="0" />
+                <span class="pay-subline" x-show="descLinhaVal(l) > 0">
+                  de R$ <span x-text="fmt(brutoLinha(l))"></span> ·
+                  <span class="minus">− R$ <span x-text="fmt(descLinhaVal(l))"></span></span>
+                </span>
+                <span class="pay-subline" x-show="descLinhaVal(l) === 0" style="color:#bdbdbb">sem desconto</span>
+                <button type="button" class="pay-rm" @click="remover(i)">remover</button>
+                <input type="hidden" name="produto_id" :value="l.id" />
+                <input type="hidden" name="quantidade" :value="l.qtd" />
+                <input type="hidden" name="produto_desc_tipo" :value="l.descTipo" />
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+      <div class="pay-subtotal" x-show="linhas.length"><span>Subtotal produtos</span><b x-text="'R$ ' + fmt(subProdutos)"></b></div>
+    {% else %}
+      <p class="pay-empty">Nenhum produto cadastrado para venda.</p>
+    {% endif %}
+
+    {# ---------- Resumo ---------- #}
+    <div class="pay-summary">
+      <div class="r"><span>Total bruto</span><span x-text="'R$ ' + fmt(brutoTotal)"></span></div>
+      <div class="r desc"><span>Descontos</span><span x-text="descTotal > 0 ? ('− R$ ' + fmt(descTotal)) : 'R$ 0,00'"></span></div>
+      <div class="r grand"><span>Total a receber</span><b x-text="'R$ ' + fmt(totalGeral)"></b></div>
+    </div>
+
+    {# ---------- Data ---------- #}
+    <div class="ag-sec" style="margin-top:16px">
+      <div>
+        <label class="lbl-sm">Data</label>
+        <input class="control mini" type="date" name="data" value="{{ data_default }}" />
+      </div>
+      <p class="help" style="margin-top:12px">
+        Cada item pode ter desconto em <b>R$</b> ou <b>%</b>. Ao salvar, vira receita no Financeiro —
+        cada lançamento guarda bruto, desconto e líquido. O agendamento aparece como <b>Pago</b>.
+      </p>
+    </div>
+
+    <div class="ag-foot">
+      <button type="button" class="btn-ghost" style="padding-left:0"
+              hx-get="/agendamentos/{{ agendamento.id }}/card"
+              hx-target="#modal-content" hx-swap="innerHTML">Voltar</button>
+      <button type="submit" class="btn-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="margin-right:6px"><path d="M20 6 9 17l-5-5"/></svg>
+        Registrar pagamento
+      </button>
+    </div>
+  </form>
+</div>
+{# A função pagamento() é global (definida em base.html, como window.multiselect),
+   para já existir quando o Alpine inicializa este fragmento via HTMX. #}

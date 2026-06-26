@@ -1,0 +1,59 @@
+{# Fragmento HTMX — detalhe de uma comanda (receitas de um agendamento). NÃO extends base. #}
+<div class="cmd-head">
+  <div class="cmd-eyebrow">Comanda</div>
+  <h2 class="serif">{{ c.cliente }}</h2>
+  <div class="meta">
+    {{ c.data_fmt }}{% if c.hora %} · <b>{{ c.hora }}</b>{% endif %}
+    {%- if c.profissionais %} · com <b>{{ c.profissionais | join(', ') }}</b>{% endif %}
+    {%- if c.usuario %} · fechada por <b>{{ c.usuario }}</b>{% endif %}
+  </div>
+</div>
+
+{% macro item(it) %}
+  <div class="pay-item {% if it.desconto > 0 %}has-disc{% endif %}">
+    <div class="pay-item-row">
+      <span class="nm">{{ it.nome }}</span>
+      <span class="net">R$ {{ it.liquido|brl }}</span>
+    </div>
+    {% if it.desconto > 0 %}
+      <div class="cmd-sub">de R$ {{ it.bruto|brl }} ·
+        <span class="minus">− R$ {{ it.desconto|brl }}{% if it.tipo == 'pct' and it.pct is not none %} ({{ it.pct }}%){% endif %}</span>
+      </div>
+    {% else %}
+      <div class="cmd-sub" style="color:#bdbdbb">sem desconto</div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% if c.servicos %}
+  <div class="cmd-seclbl">Serviços</div>
+  <div class="pay-items">
+    {% for s in c.servicos %}{{ item(s) }}{% endfor %}
+  </div>
+  <div class="pay-subtotal"><span>Subtotal serviços</span><b>R$ {{ c.sub_serv|brl }}</b></div>
+{% endif %}
+
+{% if c.produtos %}
+  <div class="cmd-seclbl">Produtos vendidos</div>
+  <div class="pay-items">
+    {% for p in c.produtos %}{{ item(p) }}{% endfor %}
+  </div>
+  <div class="pay-subtotal"><span>Subtotal produtos</span><b>R$ {{ c.sub_prod|brl }}</b></div>
+{% endif %}
+
+<div class="pay-summary">
+  <div class="r"><span>Total bruto</span><span>R$ {{ c.bruto|brl }}</span></div>
+  <div class="r desc"><span>Descontos</span><span>{% if c.desconto > 0 %}− R$ {{ c.desconto|brl }}{% else %}R$ 0,00{% endif %}</span></div>
+  <div class="r grand"><span>Total recebido</span><b>R$ {{ c.total|brl }}</b></div>
+</div>
+
+<div class="cmd-foot">
+  <button type="button" class="btn-ghost" style="padding-left:0"
+          onclick="window.dispatchEvent(new CustomEvent('close-modal'))">Fechar</button>
+  <button type="button" class="btn-danger-outline"
+          hx-post="/financeiro/comandas/{{ c.agendamento_id }}/estornar"
+          hx-confirm="Estornar o pagamento desta comanda? Os produtos vendidos voltam ao estoque e os lançamentos saem do Financeiro.">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+    Estornar pagamento
+  </button>
+</div>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SalãoApp · Financeiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     FINANCEIRO · Paleta BRUMA (cinza neutro claro)
+     Tela nova: painel (Entradas / Saídas / Saldo) por período +
+     filtro de mês + filtro de tipo + tabela de lançamentos.
+     Receita pode vir de um agendamento (origem) ou ser avulsa;
+     despesa é sempre avulsa. Cores semânticas dessaturadas:
+     verde-sálvia = entrada, clay = saída (mesmo clay do "danger").
+     =========================================================== */
+  :root{
+    --bg:        #F4F4F3;
+    --surface:   #FFFFFF;
+    --surface-2: #ECECEB;
+    --ink:       #28282A;
+    --ink-soft:  #6E6E72;
+    --line:      #E5E5E3;
+    --line-soft: #EFEFED;
+    --accent:    #A89A93;
+    --accent-deep:#8A7C75;
+    --accent-soft:#EAE5E2;
+    --graphite:  #38383B;
+    --in:        #5f7d63;   /* verde-sálvia dessaturado = entrada */
+    --in-soft:   #e7ede7;
+    --out:       #9a6a62;   /* clay = saída (mesmo do danger) */
+    --out-soft:  #efe6e4;
+    --radius:    18px;
+    --shadow:    0 18px 40px -26px rgba(40,40,42,.30);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Hanken Grotesk',system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;height:100vh;overflow:hidden;
+  }
+  .serif{font-family:'Fraunces',Georgia,serif}
+
+  /* ---------- HEADER ---------- */
+  header.topbar{
+    display:flex;align-items:center;gap:24px;padding:18px 32px;
+    background:rgba(244,244,243,.9);border-bottom:1px solid var(--line);flex-shrink:0;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand .mark{font-family:'Fraunces',serif;font-weight:600;font-size:24px;color:var(--ink)}
+  .brand .mark em{color:var(--accent-deep);font-style:italic}
+  .brand .tag{font-size:11px;text-transform:uppercase;letter-spacing:.28em;color:var(--ink-soft)}
+  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:18px}
+  .date-pill{font-size:13px;color:var(--ink-soft)}
+  .date-pill b{color:var(--ink);font-weight:600}
+
+  /* ---------- SHELL ---------- */
+  .shell{display:flex;flex:1;min-height:0}
+  aside{width:248px;flex-shrink:0;padding:26px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--bg)}
+  .nav-label{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:#a7a7a9;padding:0 14px;margin-bottom:12px}
+  nav{display:flex;flex-direction:column;gap:2px}
+  .nav-item{display:flex;align-items:center;gap:13px;padding:11px 14px;border-radius:12px;color:var(--ink-soft);font-weight:500;font-size:14.5px;text-decoration:none;transition:.18s}
+  .nav-item svg{width:19px;height:19px;flex-shrink:0;opacity:.8}
+  .nav-item:hover{background:var(--surface-2);color:var(--ink)}
+  .nav-item.active{background:var(--graphite);color:#fff;box-shadow:var(--shadow)}
+  .nav-item.active svg{opacity:1}
+  .nav-item .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  aside .foot{margin-top:auto;padding-top:18px;border-top:1px solid var(--line)}
+  .logout{display:flex;align-items:center;gap:13px;padding:11px 14px;color:var(--ink-soft);font-size:14px;text-decoration:none;border-radius:12px}
+  .logout:hover{background:var(--surface-2);color:var(--accent-deep)}
+
+  /* ---------- MAIN ---------- */
+  main{flex:1;overflow:auto;padding:28px 32px 40px;display:flex;flex-direction:column}
+  main{scrollbar-width:thin;scrollbar-color:#cfcfcd var(--bg)}
+  main::-webkit-scrollbar{width:10px}
+  main::-webkit-scrollbar-thumb{background:#cfcfcd;border-radius:6px;border:2px solid var(--bg)}
+
+  /* ---------- PAGE HEAD ---------- */
+  .page-head{display:flex;align-items:flex-end;gap:16px;margin-bottom:20px}
+  .page-title{font-family:'Fraunces',serif;font-weight:500;font-size:28px;letter-spacing:-.4px;line-height:1}
+  .count{font-size:13px;color:var(--ink-soft);padding-bottom:2px}
+  .count b{color:var(--ink);font-weight:600}
+  .btn-primary{margin-left:auto;display:inline-flex;align-items:center;gap:8px;background:var(--graphite);color:#fff;border:none;border-radius:10px;padding:11px 18px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:var(--shadow);transition:.15s;text-decoration:none}
+  .btn-primary:hover{background:#222225}
+
+  /* ---------- PAINEL (3 cards) ---------- */
+  .panel{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:22px}
+  .pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .pcard .top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .pcard .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center}
+  .pcard.in  .ic{background:var(--in-soft);color:var(--in)}
+  .pcard.out .ic{background:var(--out-soft);color:var(--out)}
+  .pcard.net .ic{background:var(--surface-2);color:var(--ink)}
+  .pcard .lbl{font-size:12.5px;color:var(--ink-soft);font-weight:500}
+  .pcard .val{font-family:'Fraunces',serif;font-size:30px;font-weight:500;line-height:1;letter-spacing:-.3px}
+  .pcard.in  .val{color:var(--in)}
+  .pcard.out .val{color:var(--out)}
+  .pcard.net .val{color:var(--ink)}
+  .pcard .meta{font-size:12px;color:var(--ink-soft);margin-top:9px}
+  .pcard .meta b{color:var(--ink);font-weight:600}
+
+  /* ---------- TOOLBAR (período + tipo + busca) ---------- */
+  .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .stepper{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:5px 8px}
+  .stepper button{width:30px;height:30px;border:none;background:none;border-radius:8px;cursor:pointer;color:var(--ink-soft);display:grid;place-items:center;transition:.13s}
+  .stepper button:hover{background:var(--surface-2);color:var(--ink)}
+  .stepper .month{font-weight:600;font-size:14px;min-width:120px;text-align:center;text-transform:capitalize}
+  .seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:4px;gap:2px}
+  .seg button{border:none;background:none;font:inherit;font-size:13.5px;font-weight:500;color:var(--ink-soft);padding:7px 14px;border-radius:8px;cursor:pointer;transition:.13s}
+  .seg button:hover{color:var(--ink)}
+  .seg button.on{background:var(--graphite);color:#fff}
+  .search{flex:1;min-width:200px;max-width:340px;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 14px;transition:.15s}
+  .search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .search svg{color:var(--accent-deep);flex-shrink:0}
+  .search input{border:none;outline:none;background:none;font:inherit;font-size:14px;color:var(--ink);width:100%}
+  .search input::placeholder{color:#a7a7a9}
+
+  /* ---------- TABELA (livro de lançamentos) ---------- */
+  .roster{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  thead th{
+    text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-soft);background:var(--surface-2);padding:13px 18px;border-bottom:1px solid var(--line);
+  }
+  thead th.right{text-align:right}
+  tbody tr{border-top:1px solid var(--line-soft);transition:background .13s}
+  tbody tr:first-child{border-top:none}
+  tbody tr:hover{background:var(--bg)}
+  td{padding:14px 18px;vertical-align:middle;color:var(--ink)}
+  td.right{text-align:right}
+
+  .date-cell{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-size:13px;white-space:nowrap}
+  .desc{font-weight:600;font-size:14.5px;color:var(--ink);line-height:1.2}
+  .desc .from{display:block;font-weight:400;font-size:12px;color:var(--ink-soft);margin-top:2px}
+
+  /* badge de tipo */
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px}
+  .badge.receita{background:var(--in-soft);color:var(--in)}
+  .badge.despesa{background:var(--out-soft);color:var(--out)}
+  .badge .pt{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+  /* origem (chip discreto) */
+  .origem{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft)}
+  .origem svg{width:14px;height:14px;opacity:.8}
+  .cat{font-size:13px;color:var(--ink)}
+
+  /* valor */
+  .amount{font-family:'Fraunces',serif;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .amount.in{color:var(--in)}
+  .amount.out{color:var(--out)}
+
+  .acts{display:flex;align-items:center;justify-content:flex-end;gap:12px;white-space:nowrap}
+  .acts a,.acts button{font:inherit;font-size:13.5px;font-weight:500;background:none;border:none;cursor:pointer;text-decoration:none;transition:.13s}
+  .acts .edit{color:var(--ink-soft)}
+  .acts .edit:hover{color:var(--ink)}
+  .acts .sep{color:var(--line)}
+  .acts .danger{color:#9a6a62}
+  .acts .danger:hover{color:#7d5049}
+  .acts .locked{color:#bdbdbb;cursor:default}
+
+  .hint{font-size:12px;color:#a7a7a9;margin-top:14px;padding-left:2px}
+
+  @media (max-width:980px){
+    aside{display:none}
+    .panel{grid-template-columns:1fr}
+    .hide-sm{display:none}
+    td,thead th{padding:12px 14px}
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark">Salão<em>App</em></span>
+      <span class="tag">Gestão do salão</span>
+    </div>
+    <div class="right">
+      <div class="date-pill">Segunda, <b>22 de junho</b></div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside>
+      <div class="nav-label">Menu</div>
+      <nav>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Agendamentos</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg> Clientes</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg> Profissionais</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg> Serviços</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18l-1.5 12.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5z"/><path d="M8 7a4 4 0 0 1 8 0"/></svg> Produtos</a>
+        <a class="nav-item active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg> Financeiro <span class="dot"></span></a>
+      </nav>
+      <div class="foot">
+        <a class="logout" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Sair</a>
+      </div>
+    </aside>
+
+    <main>
+      <!-- CABEÇALHO -->
+      <div class="page-head">
+        <h1 class="page-title serif">Financeiro</h1>
+        <span class="count"><b>14</b> lançamentos em junho</span>
+        <a class="btn-primary" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg> Novo lançamento</a>
+      </div>
+
+      <!-- PAINEL -->
+      <section class="panel">
+        <div class="pcard in">
+          <div class="top">
+            <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+            <div class="lbl">Entradas</div>
+          </div>
+          <div class="val">R$ 6.420,00</div>
+          <div class="meta">Serviços <b>R$ 5.180</b> · Produtos <b>R$ 1.240</b></div>
+        </div>
+        <div class="pcard out">
+          <div class="top">
+            <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+            <div class="lbl">Saídas</div>
+          </div>
+          <div class="val">R$ 2.870,00</div>
+          <div class="meta">6 despesas no período</div>
+        </div>
+        <div class="pcard net">
+          <div class="top">
+            <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+            <div class="lbl">Saldo do mês</div>
+          </div>
+          <div class="val">R$ 3.550,00</div>
+          <div class="meta">Entradas − Saídas</div>
+        </div>
+      </section>
+
+      <!-- TOOLBAR -->
+      <div class="toolbar">
+        <div class="stepper">
+          <button aria-label="Mês anterior"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m15 18-6-6 6-6"/></svg></button>
+          <span class="month">Junho 2026</span>
+          <button aria-label="Próximo mês"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 18 6-6-6-6"/></svg></button>
+        </div>
+        <div class="seg">
+          <button class="on">Todos</button>
+          <button>Entradas</button>
+          <button>Saídas</button>
+        </div>
+        <label class="search">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" placeholder="Buscar por descrição ou categoria" />
+        </label>
+      </div>
+
+      <!-- LANÇAMENTOS -->
+      <div class="roster">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:96px">Data</th>
+              <th>Lançamento</th>
+              <th class="hide-sm">Categoria</th>
+              <th>Tipo</th>
+              <th class="right">Valor</th>
+              <th class="right">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="date-cell">22/06</td>
+              <td>
+                <span class="desc">Corte + Escova
+                  <span class="from">Agendamento · Marina Costa</span>
+                </span>
+              </td>
+              <td class="hide-sm"><span class="cat">Serviços</span></td>
+              <td><span class="badge receita"><span class="pt"></span> Receita</span></td>
+              <td class="right"><span class="amount in">+ R$ 120,00</span></td>
+              <td class="right"><div class="acts"><span class="origem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> do agendamento</span></div></td>
+            </tr>
+            <tr>
+              <td class="date-cell">22/06</td>
+              <td><span class="desc">Venda — Shampoo Profissional 1L</span></td>
+              <td class="hide-sm"><span class="cat">Produtos</span></td>
+              <td><span class="badge receita"><span class="pt"></span> Receita</span></td>
+              <td class="right"><span class="amount in">+ R$ 89,90</span></td>
+              <td class="right"><div class="acts"><a class="edit" href="#">Editar</a><span class="sep">|</span><button class="danger">Excluir</button></div></td>
+            </tr>
+            <tr>
+              <td class="date-cell">20/06</td>
+              <td>
+                <span class="desc">Coloração + Hidratação
+                  <span class="from">Agendamento · Patrícia Lemos</span>
+                </span>
+              </td>
+              <td class="hide-sm"><span class="cat">Serviços</span></td>
+              <td><span class="badge receita"><span class="pt"></span> Receita</span></td>
+              <td class="right"><span class="amount in">+ R$ 260,00</span></td>
+              <td class="right"><div class="acts"><span class="origem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> do agendamento</span></div></td>
+            </tr>
+            <tr>
+              <td class="date-cell">18/06</td>
+              <td><span class="desc">Aluguel do espaço — junho</span></td>
+              <td class="hide-sm"><span class="cat">Aluguel</span></td>
+              <td><span class="badge despesa"><span class="pt"></span> Despesa</span></td>
+              <td class="right"><span class="amount out">− R$ 1.800,00</span></td>
+              <td class="right"><div class="acts"><a class="edit" href="#">Editar</a><span class="sep">|</span><button class="danger">Excluir</button></div></td>
+            </tr>
+            <tr>
+              <td class="date-cell">15/06</td>
+              <td><span class="desc">Reposição de estoque — fornecedor Beauty</span></td>
+              <td class="hide-sm"><span class="cat">Insumos</span></td>
+              <td><span class="badge despesa"><span class="pt"></span> Despesa</span></td>
+              <td class="right"><span class="amount out">− R$ 640,00</span></td>
+              <td class="right"><div class="acts"><a class="edit" href="#">Editar</a><span class="sep">|</span><button class="danger">Excluir</button></div></td>
+            </tr>
+            <tr>
+              <td class="date-cell">12/06</td>
+              <td><span class="desc">Anúncios Instagram</span></td>
+              <td class="hide-sm"><span class="cat">Marketing</span></td>
+              <td><span class="badge despesa"><span class="pt"></span> Despesa</span></td>
+              <td class="right"><span class="amount out">− R$ 430,00</span></td>
+              <td class="right"><div class="acts"><a class="edit" href="#">Editar</a><span class="sep">|</span><button class="danger">Excluir</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="hint">Receitas marcadas como “do agendamento” nascem ao registrar o pagamento na agenda — edite o valor por lá. Despesas e receitas avulsas são lançadas aqui.</p>
+    </main>
+  </div>
+</body>
+</html>

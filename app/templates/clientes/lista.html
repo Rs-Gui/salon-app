@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% set inativos = clientes | rejectattr('ativo') | list | length %}
+
+<div class="page-head">
+  <h1 class="page-title serif">Clientes</h1>
+  <span class="count"><b>{{ clientes | length }}</b> no total{% if inativos %} · {{ inativos }} inativo{{ 's' if inativos > 1 }}{% endif %}</span>
+  <a class="btn-primary" href="/clientes/novo">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+    Novo cliente
+  </a>
+</div>
+
+{% if erro %}
+  <div class="banner-erro">{{ erro }}</div>
+{% endif %}
+
+{% if not clientes %}
+  <div class="empty">
+    <p>Nenhum cliente cadastrado ainda.</p>
+    <a class="btn-primary" style="margin:0" href="/clientes/novo">+ Novo cliente</a>
+  </div>
+{% else %}
+  <div class="toolbar">
+    <label class="search">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="cli-busca" placeholder="Buscar por nome, telefone ou email" autocomplete="off" />
+    </label>
+    <label class="toggle">
+      <input type="checkbox" id="cli-inativos" />
+      <span class="sw"></span> Mostrar inativos
+    </label>
+  </div>
+
+  <div class="roster">
+    <table>
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th class="hide-sm">Telefone</th>
+          <th class="hide-sm">Email</th>
+          <th>Status</th>
+          <th class="right">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="cli-tbody">
+        {% for c in clientes %}
+        <tr class="{% if not c.ativo %}inactive{% endif %}"
+            data-ativo="{{ '1' if c.ativo else '0' }}"
+            data-busca="{{ (c.nome ~ ' ' ~ (c.telefone or '') ~ ' ' ~ (c.email or '')) | lower }}"
+            {% if not c.ativo %}style="display:none"{% endif %}>
+          <td>
+            <div class="who">
+              <span class="nm">{{ c.nome }}</span>
+            </div>
+          </td>
+          <td class="hide-sm {% if not c.telefone %}muted-cell{% endif %}">{{ c.telefone or '—' }}</td>
+          <td class="hide-sm {% if not c.email %}muted-cell{% endif %}">{{ c.email or '—' }}</td>
+          <td>
+            {% if c.ativo %}
+              <span class="status"><span class="pt"></span> Ativo</span>
+            {% else %}
+              <span class="status off"><span class="pt"></span> Inativo</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="acts">
+              <a class="edit" href="/clientes/{{ c.id }}/editar">Editar</a>
+              <span class="sep">|</span>
+              {% if c.ativo %}
+                <form method="post" action="/clientes/{{ c.id }}/desativar"
+                      onsubmit="return confirm('Desativar este cliente?')">
+                  <button type="submit" class="danger">Desativar</button>
+                </form>
+              {% else %}
+                <form method="post" action="/clientes/{{ c.id }}/reativar">
+                  <button type="submit" class="reactivate">Reativar</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        <tr id="cli-sem-resultados" style="display:none">
+          <td colspan="5" class="muted-cell" style="text-align:center;padding:32px">
+            Nenhum cliente encontrado para esse filtro.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="hint">Clientes inativos seguem no histórico de agendamentos — desativar só os esconde das novas marcações.</p>
+
+  <script>
+    (function () {
+      var busca = document.getElementById('cli-busca');
+      var toggle = document.getElementById('cli-inativos');
+      var rows = Array.prototype.slice.call(document.querySelectorAll('#cli-tbody tr[data-ativo]'));
+      var semResultados = document.getElementById('cli-sem-resultados');
+      function aplicar() {
+        var q = (busca.value || '').trim().toLowerCase();
+        var verInativos = toggle.checked;
+        var visiveis = 0;
+        rows.forEach(function (r) {
+          var ok = (r.getAttribute('data-busca') || '').indexOf(q) !== -1;
+          if (ok && r.getAttribute('data-ativo') === '0' && !verInativos) ok = false;
+          r.style.display = ok ? '' : 'none';
+          if (ok) visiveis++;
+        });
+        if (semResultados) semResultados.style.display = visiveis ? 'none' : '';
+      }
+      busca.addEventListener('input', aplicar);
+      toggle.addEventListener('change', aplicar);
+      aplicar();
+    })();
+  </script>
+{% endif %}
+{% endblock %}

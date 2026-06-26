@@ -1,0 +1,157 @@
+{# Fragmento HTMX — injetado em #modal-content do calendário. NÃO extends base. #}
+{% set profs_json = [] %}
+{% for p in profissionais %}
+  {% set _ = profs_json.append({
+    "id": p.id, "nome": p.nome, "nomeLower": (p.nome or "")|lower,
+    "ativo": p.ativo, "excluido": p.excluido
+  }) %}
+{% endfor %}
+{% set servs_json = [] %}
+{% for s in servicos %}
+  {% set _ = servs_json.append({
+    "id": s.id, "nome": s.nome, "nomeLower": (s.nome or "")|lower,
+    "ativo": s.ativo, "duracao": s.duracao_minutos
+  }) %}
+{% endfor %}
+{% set clientes_json = [] %}
+{% for c in clientes %}
+  {% set _ = clientes_json.append({
+    "id": c.id, "nome": c.nome, "nomeLower": (c.nome or "")|lower, "ativo": c.ativo
+  }) %}
+{% endfor %}
+
+<h2 class="modal-title serif">{{ titulo }}</h2>
+
+{% if erro %}
+  <div class="banner-erro" style="margin-top:14px">{{ erro }}</div>
+{% endif %}
+
+<form hx-post="/agendamentos/" hx-target="#modal-content" hx-swap="innerHTML" style="margin-top:18px">
+
+  <div class="grid2">
+    <div class="field">
+      <label class="lbl">Data <span class="req">*</span></label>
+      <input class="control" type="date" name="data" required value="{{ data_default }}" />
+    </div>
+    <div class="field">
+      <label class="lbl">Hora <span class="req">*</span></label>
+      <input class="control" type="time" name="hora" required value="{{ hora_default }}" />
+    </div>
+  </div>
+
+  {# ---------- Profissionais (multi-select) ---------- #}
+  <div class="field" x-data='multiselect({
+        catalogo: {{ profs_json|tojson }},
+        selecionados: {{ profissionais_selecionados|tojson }},
+        inputName: "profissional_ids",
+        mostrarDuracao: false
+      })'>
+    <label class="lbl">Profissionais <span class="req">*</span></label>
+    <div class="ms-box">
+      <div class="ms-chips">
+        <template x-for="id in selecionados" :key="id">
+          <span class="ms-chip" :class="{'inactive': !ativo(id)}">
+            <span x-text="rotulo(id)"></span>
+            <button type="button" @click="remover(id)">&times;</button>
+          </span>
+        </template>
+      </div>
+      <div class="ms-field" @click.away="aberto=false">
+        <input type="text" x-model="busca" @focus="aberto=true" placeholder="Buscar profissional..." />
+        <div class="ms-drop" x-show="aberto && filtrados.length" x-cloak>
+          <template x-for="item in filtrados" :key="item.id">
+            <div class="ms-opt" @mousedown.prevent="adicionar(item.id)" x-text="rotulo(item.id)"></div>
+          </template>
+        </div>
+      </div>
+    </div>
+    <template x-for="id in selecionados" :key="'h'+id">
+      <input type="hidden" :name="inputName" :value="id" />
+    </template>
+  </div>
+
+  {# ---------- Serviços (multi-select com duração) ---------- #}
+  <div class="field" x-data='multiselect({
+        catalogo: {{ servs_json|tojson }},
+        selecionados: {{ servicos_selecionados|tojson }},
+        inputName: "servico_ids",
+        mostrarDuracao: true,
+        onChange: function (sug) { Alpine.store("agServicos").sugestao = sug; }
+      })'>
+    <label class="lbl">Serviços <span class="req">*</span></label>
+    <div class="ms-box">
+      <div class="ms-chips">
+        <template x-for="id in selecionados" :key="id">
+          <span class="ms-chip" :class="{'inactive': !ativo(id)}">
+            <span x-text="rotulo(id)"></span>
+            <button type="button" @click="remover(id)">&times;</button>
+          </span>
+        </template>
+      </div>
+      <div class="ms-field" @click.away="aberto=false">
+        <input type="text" x-model="busca" @focus="aberto=true" placeholder="Buscar serviço..." />
+        <div class="ms-drop" x-show="aberto && filtrados.length" x-cloak>
+          <template x-for="item in filtrados" :key="item.id">
+            <div class="ms-opt" @mousedown.prevent="adicionar(item.id)" x-text="rotulo(item.id)"></div>
+          </template>
+        </div>
+      </div>
+    </div>
+    <template x-for="id in selecionados" :key="'h'+id">
+      <input type="hidden" :name="inputName" :value="id" />
+    </template>
+  </div>
+
+  {# ---------- Cliente (single-select) ---------- #}
+  <div class="field" x-data='multiselect({
+        catalogo: {{ clientes_json|tojson }},
+        selecionados: {{ ([cliente_selecionado_id] if cliente_selecionado_id else [])|tojson }},
+        inputName: "cliente_id",
+        mostrarDuracao: false,
+        single: true
+      })'>
+    <label class="lbl">Cliente</label>
+    <div class="ms-box">
+      <div class="ms-chips">
+        <template x-for="id in selecionados" :key="id">
+          <span class="ms-chip" :class="{'inactive': !ativo(id)}">
+            <span x-text="rotulo(id)"></span>
+            <button type="button" @click="remover(id)">&times;</button>
+          </span>
+        </template>
+      </div>
+      <div class="ms-field" @click.away="aberto=false">
+        <input type="text" x-model="busca" @focus="aberto=true" placeholder="Buscar cliente..." />
+        <div class="ms-drop" x-show="aberto && filtrados.length" x-cloak>
+          <template x-for="item in filtrados" :key="item.id">
+            <div class="ms-opt" @mousedown.prevent="adicionar(item.id)" x-text="rotulo(item.id)"></div>
+          </template>
+        </div>
+      </div>
+    </div>
+    <input type="hidden" name="cliente_id" :value="selecionados[0] || ''" />
+  </div>
+
+  {# ---------- Duração ---------- #}
+  <div class="field" x-data>
+    <label class="lbl">Duração (min)</label>
+    <input class="control" type="number" name="duracao_override" min="15" max="300"
+           :placeholder="$store.agServicos.sugestao + ' min'"
+           value="{{ duracao_default if duracao_default is not none else '' }}" />
+    <p class="help">
+      Sugerido pelos serviços: <span x-text="$store.agServicos.sugestao"></span> min.
+      Deixe vazio para usar o valor calculado.
+    </p>
+  </div>
+
+  {# ---------- Observações ---------- #}
+  <div class="field">
+    <label class="lbl">Observações</label>
+    <textarea class="control" name="observacoes" rows="3">{{ observacoes_default }}</textarea>
+  </div>
+
+  <div class="actions" style="margin-top:18px;padding-top:18px">
+    <button class="btn-primary" type="submit" style="margin:0">Criar agendamento</button>
+    <button class="btn-ghost" type="button" @click="$dispatch('close-modal')">Cancelar</button>
+  </div>
+</form>

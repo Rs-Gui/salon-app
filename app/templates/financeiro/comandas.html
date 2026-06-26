@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-head">
+  <h1 class="page-title serif">Financeiro</h1>
+  <span class="count"><b>{{ n_comandas }}</b> comanda{{ 's' if n_comandas != 1 }} no histórico</span>
+</div>
+
+{# ---------- abas Lançamentos | Comandas ---------- #}
+<div class="fin-tabs">
+  <a href="/financeiro/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg> Lançamentos</a>
+  <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg> Comandas</a>
+  <a href="/financeiro/comissoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Comissões</a>
+</div>
+
+{# ---------- painel ---------- #}
+<section class="fin-panel">
+  <div class="pcard in">
+    <div class="top"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="lbl">Faturado (comandas)</div></div>
+    <div class="val">R$ {{ faturado|brl }}</div>
+    <div class="pmeta">Serviços <b>R$ {{ "%.0f"|format(fat_serv) }}</b> · Produtos <b>R$ {{ "%.0f"|format(fat_prod) }}</b></div>
+  </div>
+  <div class="pcard net">
+    <div class="top"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div><div class="lbl">Comandas</div></div>
+    <div class="val">{{ n_comandas }}</div>
+    <div class="pmeta">Descontos concedidos <b>R$ {{ "%.2f"|format(desconto_total)|replace('.', ',') }}</b></div>
+  </div>
+  <div class="pcard net">
+    <div class="top"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg></div><div class="lbl">Ticket médio</div></div>
+    <div class="val">R$ {{ ticket|brl }}</div>
+    <div class="pmeta">Por atendimento pago</div>
+  </div>
+</section>
+
+{# ---------- toolbar: período (client-side) + busca ---------- #}
+<div class="toolbar">
+  <div class="seg" id="cmd-seg">
+    <button type="button" class="on" data-periodo="tudo">Tudo</button>
+    <button type="button" data-periodo="mes">Este mês</button>
+    <button type="button" data-periodo="30">30 dias</button>
+  </div>
+  <label class="search">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="text" id="cmd-busca" placeholder="Buscar por cliente ou profissional" autocomplete="off" />
+  </label>
+</div>
+
+{% if not comandas %}
+  <div class="empty">
+    <p>Nenhuma comanda ainda. As comandas nascem ao registrar o pagamento de um agendamento na agenda.</p>
+  </div>
+{% else %}
+  <div class="roster cap-rows">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:100px">Data</th>
+          <th>Cliente</th>
+          <th class="hide-sm">Itens</th>
+          <th class="hide-sm">Desconto</th>
+          <th class="right">Total</th>
+          <th class="right" style="width:70px"></th>
+        </tr>
+      </thead>
+      <tbody id="cmd-tbody">
+        {% for c in comandas %}
+        <tr class="comanda-row" data-iso="{{ c.data_iso }}"
+            data-busca="{{ (c.cliente ~ ' ' ~ (c.profissionais | join(' '))) | lower }}"
+            hx-get="/financeiro/comandas/{{ c.agendamento_id }}"
+            hx-target="#fin-modal-content" hx-swap="innerHTML"
+            onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
+          <td class="date-cell">{{ c.data_fmt }}</td>
+          <td>
+            <span class="desc">{{ c.cliente }}
+              {% if c.profissionais %}<span class="sub">com {{ c.profissionais | join(', ') }}</span>{% endif %}
+            </span>
+          </td>
+          <td class="hide-sm">
+            <span class="fin-chips">{% if c.n_serv %}{{ c.n_serv }} serviço{{ 's' if c.n_serv > 1 }}{% endif %}{% if c.n_serv and c.n_prod %} · {% endif %}{% if c.n_prod %}{{ c.n_prod }} produto{{ 's' if c.n_prod > 1 }}{% endif %}</span>
+          </td>
+          <td class="hide-sm">
+            {% if c.desconto > 0 %}<span class="disc-badge">− R$ {{ c.desconto|brl }}</span>{% else %}<span class="no-disc">—</span>{% endif %}
+          </td>
+          <td class="right"><span class="amount in">R$ {{ c.total|brl }}</span></td>
+          <td class="right"><span class="see">Ver ›</span></td>
+        </tr>
+        {% endfor %}
+        <tr id="cmd-sem-resultados" style="display:none">
+          <td colspan="6" class="muted-cell" style="text-align:center;padding:32px;color:var(--ink-soft)">
+            Nenhuma comanda encontrada para esse filtro.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="hint">Cada comanda agrupa os lançamentos de um atendimento pago (serviços + produtos). Clique para ver o detalhe item a item. O histórico não se limita ao mês — use a busca e o filtro de período.</p>
+{% endif %}
+
+{# ---------- modal de detalhe (carregado via HTMX) ---------- #}
+<div x-data="{open:false}"
+     @open-modal.window="open=true; document.body.style.overflow='hidden'"
+     @close-modal.window="open=false; document.body.style.overflow=''"
+     @keydown.escape.window="open=false; document.body.style.overflow=''"
+     x-show="open" x-cloak class="modal-backdrop">
+  <div class="modal-card scroll-bege">
+    <button type="button" class="modal-close" aria-label="Fechar"
+            @click="open=false; document.body.style.overflow=''">&times;</button>
+    <div id="fin-modal-content"></div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var busca = document.getElementById('cmd-busca');
+    var seg = document.getElementById('cmd-seg');
+    var tbody = document.getElementById('cmd-tbody');
+    if (!tbody) return;
+    var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr.comanda-row'));
+    var semResultados = document.getElementById('cmd-sem-resultados');
+    var periodo = 'tudo';
+
+    function noPeriodo(iso) {
+      if (periodo === 'tudo' || !iso) return true;
+      var d = new Date(iso + 'T00:00:00');
+      var hoje = new Date();
+      if (periodo === 'mes') {
+        return d.getFullYear() === hoje.getFullYear() && d.getMonth() === hoje.getMonth();
+      }
+      if (periodo === '30') {
+        var diff = (hoje - d) / (1000 * 60 * 60 * 24);
+        return diff >= -1 && diff <= 30;
+      }
+      return true;
+    }
+    function aplicar() {
+      var q = (busca.value || '').trim().toLowerCase();
+      var visiveis = 0;
+      rows.forEach(function (r) {
+        var ok = (r.getAttribute('data-busca') || '').indexOf(q) !== -1
+              && noPeriodo(r.getAttribute('data-iso'));
+        r.style.display = ok ? '' : 'none';
+        if (ok) visiveis++;
+      });
+      if (semResultados) semResultados.style.display = visiveis ? 'none' : '';
+    }
+    busca.addEventListener('input', aplicar);
+    seg.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-periodo]');
+      if (!btn) return;
+      periodo = btn.getAttribute('data-periodo');
+      seg.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === btn); });
+      aplicar();
+    });
+    aplicar();
+  })();
+</script>
+{% endblock %}

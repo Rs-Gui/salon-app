@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="crumb">
+  <a href="/financeiro/">Financeiro</a>
+  <span class="sep">/</span>
+  <span class="cur">Categorias</span>
+</div>
+
+<div class="page-head">
+  <h1 class="page-title serif">Categorias</h1>
+</div>
+<p class="page-sub">Organize receitas e despesas em categorias. Elas aparecem ao lançar um movimento e nos totais do painel.</p>
+
+{% if erro %}
+  <div class="banner-erro">{{ erro }}</div>
+{% endif %}
+
+<div class="cols">
+  {# ---------- RECEITAS ---------- #}
+  <div class="col-fin in">
+    <div class="col-head">
+      <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span>
+      <h2 class="serif">Receitas</h2>
+      <span class="n">{{ categorias_receita | length }} categoria{{ 's' if categorias_receita | length != 1 }}</span>
+    </div>
+    {% for c in categorias_receita %}
+    <div class="cat-row" x-data="{ edit: false }">
+      <span class="cdot"></span>
+      <template x-if="!edit">
+        <span class="nm">{{ c.nome }}</span>
+      </template>
+      <template x-if="edit">
+        <form method="post" action="/financeiro/categorias/{{ c.id }}/renomear" style="flex:1;display:flex;gap:8px">
+          <input class="control xs" type="text" name="nome" value="{{ c.nome }}" maxlength="60" style="flex:1;max-width:none" />
+          <button type="submit" class="btn-sm">Salvar</button>
+        </form>
+      </template>
+      {% if em_uso.get(c.id) %}
+        <span class="use">em uso</span>
+      {% endif %}
+      <div class="cacts">
+        <button type="button" class="rn" @click="edit = !edit" x-text="edit ? 'Cancelar' : 'Renomear'">Renomear</button>
+        <form method="post" action="/financeiro/categorias/{{ c.id }}/excluir"
+              onsubmit="return confirm({% if em_uso.get(c.id) %}'Remover “{{ c.nome }}”? Ela deixa de ser uma opção, mas continua registrada como observação nos lançamentos que já a usam.'{% else %}'Remover a categoria “{{ c.nome }}”?'{% endif %})">
+          <button type="submit" class="rm">Remover</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+    <form class="cat-add" method="post" action="/financeiro/categorias">
+      <input type="hidden" name="tipo" value="receita" />
+      <input type="text" name="nome" placeholder="Nova categoria de receita" maxlength="60" required />
+      <button type="submit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg> Adicionar</button>
+    </form>
+  </div>
+
+  {# ---------- DESPESAS ---------- #}
+  <div class="col-fin out">
+    <div class="col-head">
+      <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span>
+      <h2 class="serif">Despesas</h2>
+      <span class="n">{{ categorias_despesa | length }} categoria{{ 's' if categorias_despesa | length != 1 }}</span>
+    </div>
+    {% for c in categorias_despesa %}
+    <div class="cat-row" x-data="{ edit: false }">
+      <span class="cdot"></span>
+      <template x-if="!edit">
+        <span class="nm">{{ c.nome }}</span>
+      </template>
+      <template x-if="edit">
+        <form method="post" action="/financeiro/categorias/{{ c.id }}/renomear" style="flex:1;display:flex;gap:8px">
+          <input class="control xs" type="text" name="nome" value="{{ c.nome }}" maxlength="60" style="flex:1;max-width:none" />
+          <button type="submit" class="btn-sm">Salvar</button>
+        </form>
+      </template>
+      {% if em_uso.get(c.id) %}
+        <span class="use">em uso</span>
+      {% endif %}
+      <div class="cacts">
+        <button type="button" class="rn" @click="edit = !edit" x-text="edit ? 'Cancelar' : 'Renomear'">Renomear</button>
+        <form method="post" action="/financeiro/categorias/{{ c.id }}/excluir"
+              onsubmit="return confirm({% if em_uso.get(c.id) %}'Remover “{{ c.nome }}”? Ela deixa de ser uma opção, mas continua registrada como observação nos lançamentos que já a usam.'{% else %}'Remover a categoria “{{ c.nome }}”?'{% endif %})">
+          <button type="submit" class="rm">Remover</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+    <form class="cat-add" method="post" action="/financeiro/categorias">
+      <input type="hidden" name="tipo" value="despesa" />
+      <input type="text" name="nome" placeholder="Nova categoria de despesa" maxlength="60" required />
+      <button type="submit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg> Adicionar</button>
+    </form>
+  </div>
+</div>
+
+<p class="hint">Ao remover uma categoria já usada, ela deixa de ser uma opção, mas o nome continua registrado como observação nos lançamentos antigos — o histórico não perde a classificação. “Serviços” e “Produtos” são as categorias padrão dos pagamentos de agendamento.</p>
+{% endblock %}

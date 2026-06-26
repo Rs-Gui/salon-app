@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% set inativos = profissionais | rejectattr('ativo') | list | length %}
+
+<div class="page-head">
+  <h1 class="page-title serif">Profissionais</h1>
+  <span class="count"><b>{{ profissionais | length }}</b> no total{% if inativos %} · {{ inativos }} inativo{{ 's' if inativos > 1 }}{% endif %}</span>
+  <a class="btn-primary" href="/profissionais/novo">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+    Novo profissional
+  </a>
+</div>
+
+{% if erro %}
+  <div class="banner-erro">{{ erro }}</div>
+{% endif %}
+
+{% if not profissionais %}
+  <div class="empty">
+    <p>Nenhum profissional cadastrado ainda.</p>
+    <a class="btn-primary" style="margin:0" href="/profissionais/novo">+ Novo profissional</a>
+  </div>
+{% else %}
+  <div class="toolbar">
+    <label class="search">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="prof-busca" placeholder="Buscar por nome, telefone ou email" autocomplete="off" />
+    </label>
+    <label class="toggle">
+      <input type="checkbox" id="prof-inativos" />
+      <span class="sw"></span> Mostrar inativos
+    </label>
+  </div>
+
+  <div class="roster">
+    <table>
+      <thead>
+        <tr>
+          <th>Profissional</th>
+          <th class="hide-sm">Telefone</th>
+          <th class="hide-sm">Email</th>
+          <th>Status</th>
+          <th class="right">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="prof-tbody">
+        {% for p in profissionais %}
+        <tr class="{% if not p.ativo %}inactive{% endif %}"
+            data-ativo="{{ '1' if p.ativo else '0' }}"
+            data-busca="{{ (p.nome ~ ' ' ~ (p.telefone or '') ~ ' ' ~ (p.email or '')) | lower }}"
+            {% if not p.ativo %}style="display:none"{% endif %}>
+          <td>
+            <div class="who">
+              <span class="nm">{{ p.nome }}</span>
+            </div>
+          </td>
+          <td class="hide-sm {% if not p.telefone %}muted-cell{% endif %}">{{ p.telefone or '—' }}</td>
+          <td class="hide-sm {% if not p.email %}muted-cell{% endif %}">{{ p.email or '—' }}</td>
+          <td>
+            {% if p.ativo %}
+              <span class="status"><span class="pt"></span> Ativo</span>
+            {% else %}
+              <span class="status off"><span class="pt"></span> Inativo</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="acts">
+              <a class="edit" href="/profissionais/{{ p.id }}/editar">Editar</a>
+              {% if p.ativo %}
+                <span class="sep">|</span>
+                <form method="post" action="/profissionais/{{ p.id }}/desativar"
+                      onsubmit="return confirm('Desativar este profissional?')">
+                  <button type="submit" class="danger">Desativar</button>
+                </form>
+              {% else %}
+                <span class="sep">·</span>
+                <form method="post" action="/profissionais/{{ p.id }}/reativar">
+                  <button type="submit" class="reactivate">Reativar</button>
+                </form>
+                <span class="sep">·</span>
+                <button type="button" class="danger"
+                        onclick='window.dispatchEvent(new CustomEvent("open-modal-excluir", {detail: {nome: {{ p.nome|tojson }}, endpoint: "/profissionais/{{ p.id }}/excluir", tipo: "profissional"}}))'>
+                  Excluir permanentemente
+                </button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        <tr id="prof-sem-resultados" style="display:none">
+          <td colspan="5" class="muted-cell" style="text-align:center;padding:32px">
+            Nenhum profissional encontrado para esse filtro.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="hint">Profissionais inativos continuam no histórico de agendamentos — desativar só os esconde das novas marcações.</p>
+
+  <script>
+    (function () {
+      var busca = document.getElementById('prof-busca');
+      var toggle = document.getElementById('prof-inativos');
+      var rows = Array.prototype.slice.call(document.querySelectorAll('#prof-tbody tr[data-ativo]'));
+      var semResultados = document.getElementById('prof-sem-resultados');
+      function aplicar() {
+        var q = (busca.value || '').trim().toLowerCase();
+        var verInativos = toggle.checked;
+        var visiveis = 0;
+        rows.forEach(function (r) {
+          var ok = (r.getAttribute('data-busca') || '').indexOf(q) !== -1;
+          if (ok && r.getAttribute('data-ativo') === '0' && !verInativos) ok = false;
+          r.style.display = ok ? '' : 'none';
+          if (ok) visiveis++;
+        });
+        if (semResultados) semResultados.style.display = visiveis ? 'none' : '';
+      }
+      busca.addEventListener('input', aplicar);
+      toggle.addEventListener('change', aplicar);
+      aplicar();
+    })();
+  </script>
+{% endif %}
+
+{% include "_modal_excluir.html" %}
+{% endblock %}

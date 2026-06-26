@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-head dk-only">
+  <h1 class="page-title serif">Agenda</h1>
+</div>
+
+{# ---------- Toolbar (desktop) ---------- #}
+<div class="agenda-toolbar dk-only">
+  <a class="nav-btn" href="/agendamentos?data={{ data_anterior }}" aria-label="Dia anterior">←</a>
+  <a class="nav-btn" href="/agendamentos?data={{ data_proxima }}" aria-label="Próximo dia">→</a>
+  <span class="date-input">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    <input type="date" value="{{ data_str }}"
+           onchange="location.href='/agendamentos?data='+this.value" />
+  </span>
+  <a class="btn-outline" href="/agendamentos/a-receber" style="margin-left:auto;text-decoration:none"
+     title="Atendimentos passados ainda não pagos">
+    A receber{% if pendentes_count %} <span class="ar-alert" title="Há atendimentos a receber"></span>{% endif %}
+  </a>
+  <button type="button" class="btn-primary" style="margin-left:0"
+          hx-get="/agendamentos/novo-modal?data={{ data_str }}"
+          hx-target="#modal-content" hx-swap="innerHTML"
+          onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+    Novo agendamento
+  </button>
+</div>
+
+{% if not profissionais %}
+  <div class="empty">
+    <p>Nenhum profissional cadastrado.</p>
+    <a class="btn-primary" style="margin:0" href="/profissionais/novo">+ Novo profissional</a>
+  </div>
+{% else %}
+  {% set track_h = (horarios | length) * 30 %}
+  <div class="calwrap dk-only">
+    <div id="calendario-grid" class="cal-grid">
+
+      {# Coluna de horários (fixa, não arrastável) #}
+      <div class="col-time" data-fixed-col="true">
+        <div class="cal-head"></div>
+        <div class="track" style="height: {{ track_h }}px">
+          {% for horario in horarios %}
+            <div class="hr{% if loop.index0 % 2 %} half{% endif %}" style="top: {{ loop.index0 * 30 }}px">
+              <span>{{ horario }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# Colunas dos profissionais #}
+      {% for p in profissionais %}
+        <div class="col" data-prof-id="{{ p.id }}">
+          <div class="cal-head prof-header">
+            <span class="pname" title="{{ p.nome }}">{{ p.nome }}</span>
+          </div>
+          <div class="track" style="height: {{ track_h }}px">
+            {# Slots clicáveis (fundo) #}
+            {% for horario in horarios %}
+              <div class="hr slot{% if loop.index0 % 2 %} half{% endif %}" style="top: {{ loop.index0 * 30 }}px"
+                   hx-get="/agendamentos/novo-modal?data={{ data_str }}&hora={{ horario }}&profissional_id={{ p.id }}"
+                   hx-target="#modal-content" hx-swap="innerHTML"
+                   onclick="window.dispatchEvent(new CustomEvent('open-modal'))"></div>
+            {% endfor %}
+
+            {# Blocos de agendamento (sobrepostos) #}
+            {% for b in blocos_por_profissional.get(p.id, []) %}
+              {# A grade tem 1 célula por 30 min. Ocupa 1 célula (≤30min) → tudo na
+                 mesma linha; ocupa 2+ células (>30min) → cliente e serviço separados. #}
+              {% set uma_linha = b.duracao_efetiva <= 30 %}
+              <div class="appt{% if uma_linha %} short{% endif %}{% if b.tem_inativo %} muted{% endif %}"
+                   style="top: {{ b.top_px }}px; height: {{ b.height_px }}px"
+                   {% if b.tem_inativo %}title="Inclui profissional(is) inativo(s)"{% endif %}
+                   hx-get="/agendamentos/{{ b.id }}/card"
+                   hx-target="#modal-content" hx-swap="innerHTML"
+                   onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
+                <div class="appt-top">
+                  <span class="c">{{ b.cliente_nome or "—" }}</span>
+                  {# 1 célula: serviço ao lado, mas só se couber (decidido por JS). #}
+                  {% if uma_linha and b.servicos %}
+                    <span class="s-inline">{{ b.servicos | join(", ") }}</span>
+                  {% endif %}
+                </div>
+                {% if not uma_linha and b.servicos %}
+                  <div class="s">{{ b.servicos | join(", ") }}</div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+
+    </div>
+  </div>
+
+  {# ---------- Mobile: linha do tempo por profissional ---------- #}
+  {# Reusa os MESMOS dados (blocos_por_profissional) e endpoints HTMX do desktop.
+     Escala mobile: 1 min = 1.5px (30 min = 45px). top_px do bloco já é "minutos
+     desde 06:00", então top_mobile = top_px * 1.5. #}
+  <div class="agenda-mobile" data-data="{{ data_str }}" data-ppm="1.5">
+    <div class="m-controls">
+      <div class="m-datebar">
+        <a class="m-daynav" href="/agendamentos?data={{ data_anterior }}" aria-label="Dia anterior">‹</a>
+        <label class="m-day">
+          <span class="w" id="m-weekday"></span>
+          <span class="d" id="m-daylabel">{{ data_fmt }}</span>
+          <input type="date" value="{{ data_str }}" aria-label="Escolher data"
+                 onchange="location.href='/agendamentos?data='+this.value" />
+        </label>
+        <a class="m-daynav" href="/agendamentos?data={{ data_proxima }}" aria-label="Próximo dia">›</a>
+      </div>
+      <div class="m-pros">
+        {% for p in profissionais %}
+          <button type="button" class="m-chip{% if not p.ativo %} off{% endif %}" data-prof="{{ p.id }}">
+            {{ p.nome }} <span class="n">{{ blocos_por_profissional.get(p.id, []) | length }}</span>
+          </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% set track_h_m = (horarios | length * 45) %}
+    <div class="m-timeline" style="height:{{ track_h_m }}px">
+      <div class="m-rail">
+        {% for horario in horarios %}
+          {% if loop.index0 % 2 == 0 %}
+            <div class="m-hour" style="top:{{ loop.index0 * 45 }}px"><span class="h">{{ horario[:2] }}</span></div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% for horario in horarios %}
+        <div class="m-line{% if loop.index0 % 2 == 0 %} full{% endif %}" style="top:{{ loop.index0 * 45 }}px"></div>
+      {% endfor %}
+
+      {% for p in profissionais %}
+        <div class="m-track" data-prof="{{ p.id }}" style="display:none">
+          {# Slots livres clicáveis (pré-preenchem profissional + hora no form) #}
+          {% for horario in horarios %}
+            <div class="m-slot" style="top:{{ loop.index0 * 45 }}px;height:45px"
+                 hx-get="/agendamentos/novo-modal?data={{ data_str }}&hora={{ horario }}&profissional_id={{ p.id }}"
+                 hx-target="#modal-content" hx-swap="innerHTML"
+                 onclick="window.dispatchEvent(new CustomEvent('open-modal'))"></div>
+          {% endfor %}
+          {# Blocos de atendimento (altura = duração) #}
+          {% for b in blocos_por_profissional.get(p.id, []) %}
+            <div class="m-appt{% if b.duracao_efetiva <= 30 %} compact{% endif %}{% if b.tem_inativo %} muted{% endif %}"
+                 style="top:{{ (b.top_px * 1.5) | round | int }}px;height:{{ (b.duracao_efetiva * 1.5) | round | int }}px"
+                 hx-get="/agendamentos/{{ b.id }}/card"
+                 hx-target="#modal-content" hx-swap="innerHTML"
+                 onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
+              <span class="at">{{ b.hora }} · {{ b.duracao_efetiva }} min</span>
+              <span class="ac">{{ b.cliente_nome or "—" }}</span>
+              {% if b.servicos %}<span class="as">{{ b.servicos | join(", ") }}</span>{% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+
+      <div class="m-now" style="display:none"><span class="bubble"></span><span class="dot"></span><span class="line"></span></div>
+    </div>
+
+    <button type="button" class="m-fab"
+            hx-get="/agendamentos/novo-modal?data={{ data_str }}"
+            hx-target="#modal-content" hx-swap="innerHTML"
+            onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+      Marcar
+    </button>
+  </div>
+{% endif %}
+
+{# ---------- Modal único (alvo HTMX) ---------- #}
+<div x-data="{open:false}"
+     @open-modal.window="open=true; document.body.style.overflow='hidden'"
+     @close-modal.window="open=false; document.body.style.overflow=''"
+     @keydown.escape.window="open=false; document.body.style.overflow=''"
+     x-show="open" x-cloak class="modal-backdrop">
+  <div class="modal-card wide scroll-bege">
+    <button type="button" class="modal-close" aria-label="Fechar"
+            @click="open=false; document.body.style.overflow=''">&times;</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+{# ---------- Drag-and-drop das colunas (SortableJS + localStorage) ---------- #}
+<script>
+(function () {
+  const STORAGE_KEY = 'agendamentos:colOrder';
+  const grid = document.getElementById('calendario-grid');
+  if (!grid) return;
+
+  let saved = [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) saved = JSON.parse(raw) || [];
+  } catch (e) { saved = []; }
+
+  if (Array.isArray(saved) && saved.length) {
+    const cols = Array.from(grid.querySelectorAll('[data-prof-id]'));
+    const byId = new Map(cols.map(function (c) { return [c.getAttribute('data-prof-id'), c]; }));
+    const ordered = [];
+    saved.forEach(function (id) {
+      const el = byId.get(String(id));
+      if (el) { ordered.push(el); byId.delete(String(id)); }
+    });
+    byId.forEach(function (el) { ordered.push(el); });
+    ordered.forEach(function (el) { grid.appendChild(el); });
+  }
+
+  if (window.Sortable) {
+    Sortable.create(grid, {
+      draggable: '[data-prof-id]',
+      handle: '.prof-header',
+      animation: 150,
+      onEnd: function () {
+        const ids = Array.from(grid.querySelectorAll('[data-prof-id]'))
+          .map(function (c) { return c.getAttribute('data-prof-id'); });
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ids)); } catch (e) {}
+      }
+    });
+  }
+})();
+</script>
+
+{# ---------- Blocos curtos: serviço ao lado do cliente só quando couber ---------- #}
+<script>
+(function () {
+  // Em agendamentos < 30 min mostramos "cliente · serviço" na mesma linha.
+  // Se não couber, o serviço some (o nome do cliente tem prioridade); se nem o
+  // nome couber, ele ganha reticências. Medido em pixels, então respeita a
+  // largura real da coluna (que varia com a quantidade de profissionais).
+  function ajustarBlocosCurtos() {
+    var linhas = Array.prototype.slice.call(
+      document.querySelectorAll('.appt.short .appt-top')
+    );
+    linhas.forEach(function (line) {
+      var svc = line.querySelector('.s-inline');
+      var cli = line.querySelector('.c');
+      if (cli) cli.classList.remove('trunc');
+      if (svc) svc.classList.remove('hidden');
+      // 1) Não cabe com o serviço? Remove o serviço.
+      if (svc && line.scrollWidth > line.clientWidth + 1) {
+        svc.classList.add('hidden');
+      }
+      // 2) Mesmo sem serviço o nome estoura? Trunca com reticências.
+      if (cli && line.scrollWidth > line.clientWidth + 1) {
+        cli.classList.add('trunc');
+      }
+    });
+  }
+  ajustarBlocosCurtos();
+  var t;
+  window.addEventListener('resize', function () {
+    clearTimeout(t);
+    t = setTimeout(ajustarBlocosCurtos, 120);
+  });
+})();
+</script>
+
+{# ---------- Agenda mobile: troca de profissional + linha "agora" + scroll ---------- #}
+<script>
+(function () {
+  var root = document.querySelector('.agenda-mobile');
+  if (!root) return;
+
+  var MPPM = parseFloat(root.getAttribute('data-ppm')) || 1.5;
+  var dataStr = root.getAttribute('data-data');
+  var scroller = document.querySelector('.bruma main.content');
+  var chips = Array.prototype.slice.call(root.querySelectorAll('.m-chip'));
+  var tracks = Array.prototype.slice.call(root.querySelectorAll('.m-track'));
+  var timeline = root.querySelector('.m-timeline');
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  // Rótulo da data (dia · mês por extenso) e dia da semana — client-side, pt-BR.
+  (function () {
+    var d = new Date(dataStr + 'T00:00:00');
+    if (isNaN(d)) return;
+    var wd = d.toLocaleDateString('pt-BR', { weekday: 'long' });
+    var elW = root.querySelector('#m-weekday');
+    var elD = root.querySelector('#m-daylabel');
+    if (elW) elW.textContent = wd.charAt(0).toUpperCase() + wd.slice(1);
+    if (elD) elD.textContent = d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
+  })();
+
+  function mostrar(pid) {
+    tracks.forEach(function (tr) {
+      tr.style.display = (tr.getAttribute('data-prof') === String(pid)) ? 'block' : 'none';
+    });
+    chips.forEach(function (c) {
+      c.classList.toggle('on', c.getAttribute('data-prof') === String(pid));
+    });
+  }
+  chips.forEach(function (c) {
+    c.addEventListener('click', function () { mostrar(c.getAttribute('data-prof')); });
+  });
+
+  // Profissional inicial: o primeiro com atendimentos; senão o primeiro chip.
+  var inicial = null;
+  tracks.forEach(function (tr) {
+    if (inicial === null && tr.querySelector('.m-appt')) inicial = tr.getAttribute('data-prof');
+  });
+  if (inicial === null && chips.length) inicial = chips[0].getAttribute('data-prof');
+  if (inicial !== null) mostrar(inicial);
+
+  // Linha "agora" só quando o dia exibido é hoje; depois rola até ela.
+  var now = new Date();
+  var hoje = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+  var nowEl = root.querySelector('.m-now');
+  var totalH = timeline ? (parseFloat(timeline.style.height) || 0) : 0;
+
+  function scrollTo(top) {
+    if (!scroller) return;
+    requestAnimationFrame(function () {
+      scroller.scrollTop = Math.max(0, top - scroller.clientHeight * 0.4);
+    });
+  }
+
+  if (dataStr === hoje && nowEl) {
+    var mins = (now.getHours() - 6) * 60 + now.getMinutes();
+    var top = mins * MPPM;
+    if (top >= 0 && top <= totalH) {
+      nowEl.style.top = top + 'px';
+      nowEl.querySelector('.bubble').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+      nowEl.style.display = 'block';
+      scrollTo(top);
+    } else {
+      scrollTo(2 * 60 * MPPM); // fora do expediente → 08:00
+    }
+  } else {
+    // Outro dia: rola até o 1º atendimento do profissional ativo (ou 08:00).
+    var ativo = tracks.find(function (tr) { return tr.style.display === 'block'; });
+    var primeiro = ativo ? ativo.querySelector('.m-appt') : null;
+    scrollTo(primeiro ? (parseFloat(primeiro.style.top) || 0) - 24 : 2 * 60 * MPPM);
+  }
+})();
+</script>
+{% endblock %}

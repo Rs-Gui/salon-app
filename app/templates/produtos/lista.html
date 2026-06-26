@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% set inativos = produtos | rejectattr('ativo') | list | length %}
+{% set ns = namespace(alerta=0) %}
+{% for p in produtos if p.ativo and (p.estoque_atual == 0 or (p.estoque_minimo > 0 and p.estoque_atual <= p.estoque_minimo)) %}{% set ns.alerta = ns.alerta + 1 %}{% endfor %}
+
+<div class="page-head">
+  <h1 class="page-title serif">Produtos</h1>
+  <span class="count"><b>{{ produtos | length }}</b> no total{% if inativos %} · {{ inativos }} inativo{{ 's' if inativos > 1 }}{% endif %}{% if ns.alerta %} · {{ ns.alerta }} em alerta{% endif %}</span>
+  <a class="btn-primary" href="/produtos/novo">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+    Novo produto
+  </a>
+</div>
+
+{% if erro %}
+  <div class="banner-erro">{{ erro }}</div>
+{% endif %}
+
+{% if not produtos %}
+  <div class="empty">
+    <p>Nenhum produto cadastrado ainda.</p>
+    <a class="btn-primary" style="margin:0" href="/produtos/novo">+ Novo produto</a>
+  </div>
+{% else %}
+  <div class="toolbar">
+    <label class="search">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="prod-busca" placeholder="Buscar produto por nome" autocomplete="off" />
+    </label>
+    <label class="toggle">
+      <input type="checkbox" id="prod-inativos" />
+      <span class="sw"></span> Mostrar inativos
+    </label>
+  </div>
+
+  <div class="roster cap-rows">
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Estoque</th>
+          <th class="hide-sm">Preço</th>
+          <th>Status</th>
+          <th class="right">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="prod-tbody">
+        {% for p in produtos %}
+        <tr class="{% if not p.ativo %}inactive{% endif %}"
+            data-ativo="{{ '1' if p.ativo else '0' }}"
+            data-busca="{{ p.nome | lower }}"
+            {% if not p.ativo %}style="display:none"{% endif %}>
+          <td>
+            <div class="who">
+              <span class="nm">{{ p.nome }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="stock"><span class="qty">{{ p.estoque_atual }}</span><span class="un">{{ p.unidade }}</span></span>
+            {% if p.estoque_atual == 0 %}
+              <span class="pill out">Sem estoque</span>
+            {% elif p.estoque_minimo > 0 and p.estoque_atual <= p.estoque_minimo %}
+              <span class="pill low">Estoque baixo</span>
+            {% endif %}
+          </td>
+          <td class="hide-sm"><span class="price">R$ {{ "%.2f"|format(p.preco_venda or 0)|replace(".", ",") }}</span></td>
+          <td>
+            {% if p.ativo %}
+              <span class="status"><span class="pt"></span> Ativo</span>
+            {% else %}
+              <span class="status off"><span class="pt"></span> Inativo</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="acts">
+              {% if p.ativo %}
+                <button type="button" class="add"
+                        hx-get="/produtos/{{ p.id }}/movimentar?tipo=entrada"
+                        hx-target="#modal-content" hx-swap="innerHTML"
+                        onclick="window.dispatchEvent(new CustomEvent('open-modal'))">+ Adicionar</button>
+                <button type="button" class="sub"
+                        hx-get="/produtos/{{ p.id }}/movimentar?tipo=saida_uso"
+                        hx-target="#modal-content" hx-swap="innerHTML"
+                        onclick="window.dispatchEvent(new CustomEvent('open-modal'))">− Retirar</button>
+                <span class="sep">|</span>
+                <a class="hist" href="/produtos/{{ p.id }}/movimentacoes">Histórico</a>
+                <a class="edit" href="/produtos/{{ p.id }}/editar">Editar</a>
+                <form method="post" action="/produtos/{{ p.id }}/desativar"
+                      onsubmit="return confirm('Desativar este produto?')">
+                  <button type="submit" class="danger">Desativar</button>
+                </form>
+              {% else %}
+                <a class="hist" href="/produtos/{{ p.id }}/movimentacoes">Histórico</a>
+                <span class="sep">·</span>
+                <a class="edit" href="/produtos/{{ p.id }}/editar">Editar</a>
+                <span class="sep">·</span>
+                <form method="post" action="/produtos/{{ p.id }}/reativar">
+                  <button type="submit" class="reactivate">Reativar</button>
+                </form>
+                <span class="sep">·</span>
+                <button type="button" class="danger"
+                        onclick='window.dispatchEvent(new CustomEvent("open-modal-excluir", {detail: {nome: {{ p.nome|tojson }}, endpoint: "/produtos/{{ p.id }}/excluir", tipo: "produto"}}))'>
+                  Excluir permanentemente
+                </button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        <tr id="prod-sem-resultados" style="display:none">
+          <td colspan="5" class="muted-cell" style="text-align:center;padding:32px">
+            Nenhum produto encontrado para esse filtro.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="hint">Produtos são contados em unidades. Desativar um produto o esconde das vendas, mas mantém o histórico de movimentações.</p>
+
+  <script>
+    (function () {
+      var busca = document.getElementById('prod-busca');
+      var toggle = document.getElementById('prod-inativos');
+      var rows = Array.prototype.slice.call(document.querySelectorAll('#prod-tbody tr[data-ativo]'));
+      var semResultados = document.getElementById('prod-sem-resultados');
+      function aplicar() {
+        var q = (busca.value || '').trim().toLowerCase();
+        var verInativos = toggle.checked;
+        var visiveis = 0;
+        rows.forEach(function (r) {
+          var ok = (r.getAttribute('data-busca') || '').indexOf(q) !== -1;
+          if (ok && r.getAttribute('data-ativo') === '0' && !verInativos) ok = false;
+          r.style.display = ok ? '' : 'none';
+          if (ok) visiveis++;
+        });
+        if (semResultados) semResultados.style.display = visiveis ? 'none' : '';
+      }
+      busca.addEventListener('input', aplicar);
+      toggle.addEventListener('change', aplicar);
+      aplicar();
+    })();
+  </script>
+{% endif %}
+
+{# ---------- Modal único (alvo HTMX da movimentação) ---------- #}
+<div x-data="{open:false}"
+     @open-modal.window="open=true; document.body.style.overflow='hidden'"
+     @close-modal.window="open=false; document.body.style.overflow=''"
+     @keydown.escape.window="open=false; document.body.style.overflow=''"
+     x-show="open" x-cloak class="modal-backdrop">
+  <div class="modal-card scroll-bege">
+    <button type="button" class="modal-close" aria-label="Fechar"
+            @click="open=false; document.body.style.overflow=''">&times;</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+{# ---------- Modal de exclusão permanente ---------- #}
+{% include "_modal_excluir.html" %}
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% set edicao = cliente.id is not none %}
+
+<div class="frame">
+  <div class="crumb">
+    <a href="/clientes/">Clientes</a>
+    <span class="sep">/</span>
+    <span class="cur">{{ 'Editar cliente' if edicao else 'Novo cliente' }}</span>
+  </div>
+
+  <div class="form-head">
+    <div>
+      <h1 class="serif">{{ cliente.nome if edicao else 'Novo cliente' }}</h1>
+      {% if edicao %}
+        <div class="meta">
+          <span class="pt {{ '' if cliente.ativo else 'off' }}"></span>
+          {{ 'Cliente ativo' if cliente.ativo else 'Cliente inativo' }}
+          {% if cliente.criado_em %} · cadastrado em {{ cliente.criado_em.strftime('%d/%m/%Y') }}{% endif %}
+        </div>
+      {% else %}
+        <div class="meta">Preencha os dados do novo cliente.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if erro %}
+    <div class="banner-erro">{{ erro }}</div>
+  {% endif %}
+
+  <div class="card">
+    <form id="cli-form" method="post" action="{{ action }}">
+      <div class="field">
+        <label class="lbl" for="nome">Nome <span class="req">*</span></label>
+        <input class="control" id="nome" type="text" name="nome" required maxlength="200"
+               value="{{ cliente.nome or '' }}" />
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="telefone">Telefone</label>
+        <input class="control" id="telefone" type="text" name="telefone"
+               maxlength="15" pattern="\d{8,15}" inputmode="numeric"
+               placeholder="11999998888" value="{{ cliente.telefone or '' }}" />
+        <p class="help">Apenas números, 8 a 15 dígitos.</p>
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="email">Email</label>
+        <input class="control" id="email" type="text" name="email" maxlength="200"
+               pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
+               placeholder="exemplo@dominio.com" value="{{ cliente.email or '' }}" />
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="observacoes">Observações</label>
+        <textarea class="control" id="observacoes" name="observacoes" rows="3"
+                  placeholder="Preferências, alergias, histórico…">{{ cliente.observacoes or '' }}</textarea>
+      </div>
+    </form>
+
+    <div class="actions">
+      <button class="btn-primary" type="submit" form="cli-form" style="margin:0">Salvar</button>
+      <a class="btn-ghost" href="/clientes/">Cancelar</a>
+      {% if edicao %}
+        <form class="push" method="post"
+              action="/clientes/{{ cliente.id }}/{{ 'desativar' if cliente.ativo else 'reativar' }}"
+              {% if cliente.ativo %}onsubmit="return confirm('Desativar este cliente?')"{% endif %}>
+          <button type="submit" class="btn-danger">
+            {{ 'Desativar cliente' if cliente.ativo else 'Reativar cliente' }}
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base_auth.html" %}
+
+{% block content %}
+<h2 class="serif">Primeiro acesso</h2>
+<p class="sub">Crie a conta de administrador — será a conta principal, com permissão para gerenciar os demais usuários.</p>
+
+{% if erro %}
+  <div class="banner-erro">{{ erro }}</div>
+{% endif %}
+
+<form method="post" action="/setup">
+  <div class="field">
+    <label class="lbl" for="nome_usuario">Nome de usuário</label>
+    <input class="control" id="nome_usuario" name="nome_usuario" type="text" required autofocus
+           value="{{ nome_usuario or '' }}" autocomplete="username" />
+    <p class="help">3 a 30 caracteres: minúsculas, números, ponto, hífen ou sublinhado.</p>
+  </div>
+  <div class="field">
+    <label class="lbl" for="senha">Senha</label>
+    <input class="control" id="senha" name="senha" type="password" required minlength="6" autocomplete="new-password" />
+    <p class="help">Mínimo de 6 caracteres.</p>
+  </div>
+  <div class="field">
+    <label class="lbl" for="senha_confirmacao">Confirme a senha</label>
+    <input class="control" id="senha_confirmacao" name="senha_confirmacao" type="password" required minlength="6" />
+  </div>
+  <button class="btn-primary btn-block" type="submit">Criar senha</button>
+</form>
+{% endblock %}

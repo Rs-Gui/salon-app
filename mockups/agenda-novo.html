@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SalãoApp · Novo agendamento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     AGENDA · MODAL "Novo agendamento" · Paleta BRUMA
+     Shell da Agenda (esmaecido) + backdrop + diálogo central.
+     Fiel a agendamentos/_form_modal.html.
+     =========================================================== */
+  :root{
+    --bg:        #F4F4F3;
+    --surface:   #FFFFFF;
+    --surface-2: #ECECEB;
+    --ink:       #28282A;
+    --ink-soft:  #6E6E72;
+    --line:      #E5E5E3;
+    --line-soft: #EFEFED;
+    --accent:    #A89A93;
+    --accent-deep:#8A7C75;
+    --accent-soft:#EAE5E2;
+    --graphite:  #38383B;
+    --radius:    18px;
+    --shadow:    0 18px 40px -26px rgba(40,40,42,.30);
+    --slot:      30px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Hanken Grotesk',system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;height:100vh;overflow:hidden;
+  }
+  .serif{font-family:'Fraunces',Georgia,serif}
+
+  /* ---------- HEADER ---------- */
+  header.topbar{
+    display:flex;align-items:center;gap:24px;padding:18px 32px;
+    background:rgba(244,244,243,.9);border-bottom:1px solid var(--line);flex-shrink:0;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand .mark{font-family:'Fraunces',serif;font-weight:600;font-size:24px;color:var(--ink)}
+  .brand .mark em{color:var(--accent-deep);font-style:italic}
+  .brand .tag{font-size:11px;text-transform:uppercase;letter-spacing:.28em;color:var(--ink-soft)}
+  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:18px}
+  .date-pill{font-size:13px;color:var(--ink-soft)}
+  .date-pill b{color:var(--ink);font-weight:600}
+
+  /* ---------- SHELL ---------- */
+  .shell{display:flex;flex:1;min-height:0}
+  aside{width:248px;flex-shrink:0;padding:26px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--bg)}
+  .nav-label{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:#a7a7a9;padding:0 14px;margin-bottom:12px}
+  nav{display:flex;flex-direction:column;gap:2px}
+  .nav-item{display:flex;align-items:center;gap:13px;padding:11px 14px;border-radius:12px;color:var(--ink-soft);font-weight:500;font-size:14.5px;text-decoration:none;transition:.18s}
+  .nav-item svg{width:19px;height:19px;flex-shrink:0;opacity:.8}
+  .nav-item:hover{background:var(--surface-2);color:var(--ink)}
+  .nav-item.active{background:var(--graphite);color:#fff;box-shadow:var(--shadow)}
+  .nav-item.active svg{opacity:1}
+  .nav-item .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  aside .foot{margin-top:auto;padding-top:18px;border-top:1px solid var(--line)}
+  .logout{display:flex;align-items:center;gap:13px;padding:11px 14px;color:var(--ink-soft);font-size:14px;text-decoration:none;border-radius:12px}
+  .logout:hover{background:var(--surface-2);color:var(--accent-deep)}
+
+  /* ---------- MAIN (Agenda esmaecida por trás) ---------- */
+  main{flex:1;overflow:hidden;padding:28px 32px 0;display:flex;flex-direction:column}
+  .page-title{font-family:'Fraunces',serif;font-weight:500;font-size:26px;margin-bottom:16px;letter-spacing:-.3px}
+  .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px}
+  .nav-btn{width:38px;height:38px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;font-size:15px;text-decoration:none}
+  .date-input{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px;color:var(--ink)}
+  .date-input svg{color:var(--accent-deep)}
+  .date-label{font-weight:600;font-size:15px;color:var(--ink)}
+  .toolbar .btn-primary{margin-left:auto;display:inline-flex;align-items:center;gap:8px;background:var(--graphite);color:#fff;border:none;border-radius:10px;padding:10px 18px;font:inherit;font-size:14px;font-weight:600;box-shadow:var(--shadow)}
+
+  /* calendário placeholder leve (esmaecido) */
+  .cal-ph{flex:1;min-height:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex}
+  .ph-time{width:62px;flex-shrink:0;border-right:1px solid var(--line);padding-top:42px}
+  .ph-time .h{height:60px;padding-left:8px;font-size:11px;color:var(--ink-soft);border-top:1px solid var(--line-soft)}
+  .ph-col{flex:1;border-right:1px solid var(--line);min-width:120px}
+  .ph-col:last-child{border-right:none}
+  .ph-head{height:42px;background:var(--surface-2);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 12px;font-size:13.5px;font-weight:600;color:var(--ink)}
+  .ph-body{position:relative;padding-top:0}
+  .ph-block{margin:10px 6px;border-radius:7px;background:var(--surface-2);border-left:3px solid var(--graphite);height:46px}
+  .ph-block.accent{background:var(--accent-soft);border-left-color:var(--accent-deep)}
+  .stage{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
+
+  /* ---------- BACKDROP + DIÁLOGO ---------- */
+  .backdrop{position:fixed;inset:0;background:rgba(40,40,42,.45);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px}
+  .dialog{
+    width:100%;max-width:600px;max-height:85vh;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 30px 80px -30px rgba(40,40,42,.55);
+    display:flex;flex-direction:column;overflow:hidden;position:relative;
+  }
+  .dialog-head{display:flex;align-items:center;padding:22px 26px 16px;border-bottom:1px solid var(--line-soft);flex-shrink:0}
+  .dialog-head h2{font-family:'Fraunces',serif;font-weight:500;font-size:23px;letter-spacing:-.3px}
+  .x{position:absolute;top:18px;right:18px;width:34px;height:34px;display:grid;place-items:center;border:none;background:var(--bg);color:var(--ink-soft);border-radius:9px;cursor:pointer;font-size:18px;line-height:1;transition:.13s}
+  .x:hover{background:var(--surface-2);color:var(--ink)}
+  .dialog-body{padding:22px 26px;overflow:auto;flex:1}
+  .dialog-body{scrollbar-width:thin;scrollbar-color:#cfcfcd var(--surface)}
+  .dialog-body::-webkit-scrollbar{width:10px}
+  .dialog-body::-webkit-scrollbar-thumb{background:#cfcfcd;border-radius:6px;border:2px solid var(--surface)}
+
+  /* ---------- CAMPOS (reuso clientes-form) ---------- */
+  .field{margin-bottom:18px}
+  .field:last-child{margin-bottom:0}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  label.lbl{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:7px}
+  label.lbl .req{color:var(--accent-deep)}
+  .control{
+    width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;
+    padding:11px 14px;font:inherit;font-size:14.5px;color:var(--ink);transition:.15s;
+  }
+  .control::placeholder{color:#a7a7a9}
+  .control:focus{outline:none;background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  textarea.control{resize:vertical;min-height:80px;line-height:1.5}
+  .help{font-size:12px;color:var(--ink-soft);margin-top:6px}
+
+  /* ---------- MULTI-SELEÇÃO (chips + input + dropdown) ---------- */
+  .multi{position:relative}
+  .multibox{
+    width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;
+    padding:9px 11px;transition:.15s;
+  }
+  .multibox.focus{background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{
+    display:inline-flex;align-items:center;gap:7px;background:var(--accent-soft);color:var(--accent-deep);
+    border:1px solid #ded6d1;border-radius:999px;padding:5px 8px 5px 12px;font-size:13px;font-weight:600;
+  }
+  .chip .dur{font-weight:500;color:#9a8d86;font-size:12px}
+  .chip .rm{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:rgba(138,124,117,.18);color:var(--accent-deep);border:none;cursor:pointer;font-size:13px;line-height:1}
+  .chip .rm:hover{background:rgba(138,124,117,.32)}
+  .multi-input{
+    width:100%;border:none;background:none;outline:none;font:inherit;font-size:14px;color:var(--ink);
+    padding:7px 3px 2px;
+  }
+  .multi-input::placeholder{color:#a7a7a9}
+  .dropdown{
+    position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:20;background:var(--surface);
+    border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;
+  }
+  .opt{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:14px;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--line-soft)}
+  .opt:last-child{border-bottom:none}
+  .opt:hover{background:var(--accent-soft)}
+  .opt .av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#BBADA6,var(--accent-deep));color:#fff;display:grid;place-items:center;font-size:11px;font-weight:600;flex-shrink:0}
+  .opt .role{margin-left:auto;font-size:12px;color:var(--ink-soft)}
+
+  /* ---------- AÇÕES ---------- */
+  .actions{display:flex;align-items:center;gap:12px;margin-top:24px;padding-top:20px;border-top:1px solid var(--line-soft)}
+  .btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--graphite);color:#fff;border:none;border-radius:10px;padding:11px 22px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+  .btn-primary:hover{background:#222225}
+  .btn-ghost{display:inline-flex;align-items:center;background:none;color:var(--ink-soft);border:none;border-radius:10px;padding:11px 16px;font:inherit;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;transition:.13s}
+  .btn-ghost:hover{color:var(--ink)}
+
+  @media (max-width:880px){ aside{display:none} }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark">Salão<em>App</em></span>
+      <span class="tag">Gestão do salão</span>
+    </div>
+    <div class="right">
+      <div class="date-pill">Quinta, <b>18 de junho</b></div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside>
+      <div class="nav-label">Menu</div>
+      <nav>
+        <a class="nav-item active" href="agenda.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Agendamentos <span class="dot"></span></a>
+        <a class="nav-item" href="clientes.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg> Clientes</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg> Profissionais</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg> Serviços</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18l-1.5 12.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5z"/><path d="M8 7a4 4 0 0 1 8 0"/></svg> Produtos</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg> Financeiro</a>
+      </nav>
+      <div class="foot">
+        <a class="logout" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Sair</a>
+      </div>
+    </aside>
+
+    <main>
+      <div class="page-title">Agenda</div>
+      <div class="toolbar">
+        <a class="nav-btn" href="#">&larr;</a>
+        <a class="nav-btn" href="#">&rarr;</a>
+        <div class="date-input">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          18/06/2026
+        </div>
+        <span class="date-label">Quinta, 18 de junho de 2026</span>
+        <button class="btn-primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg> Novo agendamento</button>
+      </div>
+
+      <div class="stage">
+        <!-- Calendário placeholder leve -->
+        <div class="cal-ph">
+          <div class="ph-time">
+            <div class="h">09:00</div><div class="h">10:00</div><div class="h">11:00</div><div class="h">12:00</div><div class="h">13:00</div>
+          </div>
+          <div class="ph-col"><div class="ph-head">Carla Bianchi</div><div class="ph-body"><div class="ph-block"></div><div class="ph-block accent"></div></div></div>
+          <div class="ph-col"><div class="ph-head">Renata Souza</div><div class="ph-body"><div class="ph-block accent"></div><div class="ph-block"></div></div></div>
+          <div class="ph-col"><div class="ph-head">Aline Ferreira</div><div class="ph-body"><div class="ph-block"></div></div></div>
+          <div class="ph-col"><div class="ph-head">Bruno Tavares</div><div class="ph-body"><div class="ph-block"></div></div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ MODAL ============ -->
+  <div class="backdrop">
+    <div class="dialog">
+      <button class="x" aria-label="Fechar">&times;</button>
+      <div class="dialog-head">
+        <h2 class="serif">Novo agendamento</h2>
+      </div>
+      <div class="dialog-body">
+        <form onsubmit="return false">
+
+          <!-- Data + Hora -->
+          <div class="field">
+            <div class="row2">
+              <div>
+                <label class="lbl">Data <span class="req">*</span></label>
+                <input class="control" type="date" value="2026-06-18" required />
+              </div>
+              <div>
+                <label class="lbl">Hora <span class="req">*</span></label>
+                <input class="control" type="time" value="14:00" required />
+              </div>
+            </div>
+          </div>
+
+          <!-- Profissionais (dropdown ABERTO) -->
+          <div class="field">
+            <label class="lbl">Profissionais <span class="req">*</span></label>
+            <div class="multi">
+              <div class="multibox focus">
+                <div class="chips">
+                  <span class="chip">Carla Bianchi <button class="rm" type="button">&times;</button></span>
+                </div>
+                <input class="multi-input" type="text" placeholder="Buscar profissional…" value="re" />
+              </div>
+              <div class="dropdown">
+                <div class="opt"><span class="av">RS</span> Renata Souza <span class="role">Colorista</span></div>
+                <div class="opt"><span class="av">AF</span> Aline Ferreira <span class="role">Manicure</span></div>
+                <div class="opt"><span class="av">RB</span> Renan Brito <span class="role">Cabeleireiro</span></div>
+                <div class="opt"><span class="av">BT</span> Bruno Tavares <span class="role">Barbeiro</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Serviços -->
+          <div class="field">
+            <label class="lbl">Serviços <span class="req">*</span></label>
+            <div class="multi">
+              <div class="multibox">
+                <div class="chips">
+                  <span class="chip">Corte + Escova <span class="dur">60 min</span> <button class="rm" type="button">&times;</button></span>
+                  <span class="chip">Hidratação <span class="dur">60 min</span> <button class="rm" type="button">&times;</button></span>
+                </div>
+                <input class="multi-input" type="text" placeholder="Buscar serviço…" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Cliente (seleção única) -->
+          <div class="field">
+            <label class="lbl">Cliente</label>
+            <div class="multi">
+              <div class="multibox">
+                <div class="chips">
+                  <span class="chip">Marina Costa <button class="rm" type="button">&times;</button></span>
+                </div>
+                <input class="multi-input" type="text" placeholder="Buscar cliente…" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Duração -->
+          <div class="field">
+            <label class="lbl">Duração (min)</label>
+            <input class="control" type="number" placeholder="120 min" />
+            <p class="help">Sugerido pelos serviços: 120 min. Deixe vazio para usar o valor calculado.</p>
+          </div>
+
+          <!-- Observações -->
+          <div class="field">
+            <label class="lbl">Observações</label>
+            <textarea class="control" rows="3" placeholder="Preferências, observações internas…"></textarea>
+          </div>
+
+          <div class="actions">
+            <button class="btn-primary" type="submit">Criar agendamento</button>
+            <a class="btn-ghost" href="agenda.html">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

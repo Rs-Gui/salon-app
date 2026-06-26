@@ -1,0 +1,40 @@
+{# Fragmento HTMX — detalhe da comissão de um profissional no mês. NÃO extends base. #}
+<div class="cmd-head">
+  <div class="cmd-eyebrow">Comissão</div>
+  <h2 class="serif">{{ c.nome }}</h2>
+  <div class="meta">{{ mes_label }} · {{ c.servicos | length }} serviço{{ 's' if c.servicos | length != 1 }} pago{{ 's' if c.servicos | length != 1 }}</div>
+</div>
+
+{% if c.servicos %}
+  <div class="cmd-seclbl">Serviços</div>
+  <div>
+    {% for s in c.servicos %}
+    <div class="comr">
+      <div class="d">{{ s.data_fmt }}</div>
+      <div class="s">
+        <div class="sv">{{ s.servico }}{% if s.shared %} <span class="shared-tag">compartilhado</span>{% endif %}</div>
+        <div class="cl">{{ s.cliente }}{% if s.com %} · com {{ s.com }}{% endif %}</div>
+      </div>
+      <div class="v">R$ {{ s.valor|brl }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="pay-summary">
+    <div class="r grand"><span>Total dos serviços</span><b>R$ {{ c.total|brl }}</b></div>
+  </div>
+{% else %}
+  <p style="padding:8px 0;color:var(--ink-soft)">Sem serviços pagos no período.</p>
+{% endif %}
+
+<div class="cmd-foot">
+  <button type="button" class="btn-ghost" style="padding-left:0"
+          onclick="window.dispatchEvent(new CustomEvent('close-modal'))">Fechar</button>
+  {% if c.servicos %}
+  <a class="btn-primary" style="margin-left:auto"
+     href="/financeiro/novo?tipo=despesa&descricao={{ ('Comissão ' ~ c.nome ~ ' — ' ~ mes_label) | urlencode }}&valor={{ ('%.2f'|format(c.total))|replace('.', ',') }}">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+    Lançar pagamento
+  </a>
+  {% endif %}
+</div>

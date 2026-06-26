@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-head">
+  <h1 class="page-title serif">A receber</h1>
+  <span class="count"><b>{{ n }}</b> atendimento{{ 's' if n != 1 }} não pago{{ 's' if n != 1 }}{% if total_previsto %} · R$ {{ total_previsto|brl }} previsto{% endif %}</span>
+  <a class="btn-ghost" href="/agendamentos" style="margin-left:auto;text-decoration:none">← Voltar para a agenda</a>
+</div>
+
+{% if not linhas %}
+  <div class="empty">
+    <p>Tudo em dia — nenhum atendimento passado sem pagamento.</p>
+  </div>
+{% else %}
+  <div class="roster cap-rows">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:130px">Quando</th>
+          <th>Cliente</th>
+          <th class="hide-sm">Profissional</th>
+          <th class="hide-sm">Serviços</th>
+          <th class="right">Previsto</th>
+          <th class="right" style="width:78px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in linhas %}
+        <tr class="comanda-row"
+            hx-get="/agendamentos/{{ l.id }}/pagamento"
+            hx-target="#modal-content" hx-swap="innerHTML"
+            onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
+          <td class="date-cell">{{ l.data_fmt }} · {{ l.hora }}</td>
+          <td><span class="desc">{{ l.cliente or 'Sem cliente' }}</span></td>
+          <td class="hide-sm">{{ l.profissionais }}{% if l.tem_inativo %} <span class="from">(inclui inativo)</span>{% endif %}</td>
+          <td class="hide-sm"><span class="muted-cell">{{ l.servicos }}</span></td>
+          <td class="right"><span class="price">R$ {{ l.valor|brl }}</span></td>
+          <td class="right"><span class="see">Pagar ›</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <p class="hint">Atendimentos com data anterior a hoje e sem pagamento registrado. Clique para registrar o pagamento (abre o mesmo fluxo da agenda). O valor previsto é a soma dos serviços — o total final pode mudar com produtos e descontos no pagamento.</p>
+{% endif %}
+
+{# ---------- Modal (alvo HTMX do pagamento) ---------- #}
+<div x-data="{open:false}"
+     @open-modal.window="open=true; document.body.style.overflow='hidden'"
+     @close-modal.window="open=false; document.body.style.overflow=''"
+     @keydown.escape.window="open=false; document.body.style.overflow=''"
+     x-show="open" x-cloak class="modal-backdrop">
+  <div class="modal-card wide scroll-bege">
+    <button type="button" class="modal-close" aria-label="Fechar"
+            @click="open=false; document.body.style.overflow=''">&times;</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+{% endblock %}

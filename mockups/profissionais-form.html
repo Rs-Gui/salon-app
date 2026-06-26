@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SalãoApp · Editar profissional</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     PROFISSIONAIS · FORM (cadastro / edição) · Paleta BRUMA
+     Recriação fiel do formulário real: Nome* · Telefone · Email
+     · Observações · Salvar / Cancelar. Serve tanto para
+     "Novo profissional" quanto "Editar profissional" (aqui: edição).
+     =========================================================== */
+  :root{
+    --bg:        #F4F4F3;
+    --surface:   #FFFFFF;
+    --surface-2: #ECECEB;
+    --ink:       #28282A;
+    --ink-soft:  #6E6E72;
+    --line:      #E5E5E3;
+    --line-soft: #EFEFED;
+    --accent:    #A89A93;
+    --accent-deep:#8A7C75;
+    --accent-soft:#EAE5E2;
+    --graphite:  #38383B;
+    --radius:    18px;
+    --shadow:    0 18px 40px -26px rgba(40,40,42,.30);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Hanken Grotesk',system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;height:100vh;overflow:hidden;
+  }
+  .serif{font-family:'Fraunces',Georgia,serif}
+
+  /* ---------- HEADER ---------- */
+  header.topbar{
+    display:flex;align-items:center;gap:24px;padding:18px 32px;
+    background:rgba(244,244,243,.9);border-bottom:1px solid var(--line);flex-shrink:0;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand .mark{font-family:'Fraunces',serif;font-weight:600;font-size:24px;color:var(--ink)}
+  .brand .mark em{color:var(--accent-deep);font-style:italic}
+  .brand .tag{font-size:11px;text-transform:uppercase;letter-spacing:.28em;color:var(--ink-soft)}
+  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:18px}
+  .date-pill{font-size:13px;color:var(--ink-soft)}
+  .date-pill b{color:var(--ink);font-weight:600}
+
+  /* ---------- SHELL ---------- */
+  .shell{display:flex;flex:1;min-height:0}
+  aside{width:248px;flex-shrink:0;padding:26px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--bg)}
+  .nav-label{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:#a7a7a9;padding:0 14px;margin-bottom:12px}
+  nav{display:flex;flex-direction:column;gap:2px}
+  .nav-item{display:flex;align-items:center;gap:13px;padding:11px 14px;border-radius:12px;color:var(--ink-soft);font-weight:500;font-size:14.5px;text-decoration:none;transition:.18s}
+  .nav-item svg{width:19px;height:19px;flex-shrink:0;opacity:.8}
+  .nav-item:hover{background:var(--surface-2);color:var(--ink)}
+  .nav-item.active{background:var(--graphite);color:#fff;box-shadow:var(--shadow)}
+  .nav-item.active svg{opacity:1}
+  .nav-item .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  aside .foot{margin-top:auto;padding-top:18px;border-top:1px solid var(--line)}
+  .logout{display:flex;align-items:center;gap:13px;padding:11px 14px;color:var(--ink-soft);font-size:14px;text-decoration:none;border-radius:12px}
+  .logout:hover{background:var(--surface-2);color:var(--accent-deep)}
+
+  /* ---------- MAIN ---------- */
+  main{flex:1;overflow:auto;padding:28px 32px 40px;display:flex;flex-direction:column}
+  main{scrollbar-width:thin;scrollbar-color:#cfcfcd var(--bg)}
+  main::-webkit-scrollbar{width:10px}
+  main::-webkit-scrollbar-thumb{background:#cfcfcd;border-radius:6px;border:2px solid var(--bg)}
+  .frame{width:100%;max-width:640px;margin:0 auto}
+
+  /* ---------- CAMINHO / TÍTULO ---------- */
+  .crumb{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-soft);margin-bottom:18px}
+  .crumb a{color:var(--ink-soft);text-decoration:none;transition:.13s}
+  .crumb a:hover{color:var(--ink)}
+  .crumb .sep{color:#c2c2bf}
+  .crumb .cur{color:var(--ink);font-weight:500}
+
+  .form-head{display:flex;align-items:center;gap:15px;margin-bottom:24px}
+  .mono{width:52px;height:52px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,#BBADA6,var(--accent-deep));display:grid;place-items:center;color:#fff;font-weight:600;font-size:18px;letter-spacing:.02em;box-shadow:var(--shadow)}
+  .form-head h1{font-family:'Fraunces',serif;font-weight:500;font-size:27px;letter-spacing:-.4px;line-height:1.1}
+  .form-head .meta{font-size:13px;color:var(--ink-soft);margin-top:3px}
+  .form-head .meta .pt{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);vertical-align:middle;margin-right:6px}
+
+  /* ---------- CARD DO FORM ---------- */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px}
+  .field{margin-bottom:20px}
+  .field:last-of-type{margin-bottom:0}
+  label.lbl{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:7px}
+  label.lbl .req{color:var(--accent-deep)}
+  .control{
+    width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;
+    padding:11px 14px;font:inherit;font-size:14.5px;color:var(--ink);transition:.15s;
+  }
+  .control::placeholder{color:#a7a7a9}
+  .control:focus{outline:none;background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  textarea.control{resize:vertical;min-height:88px;line-height:1.5}
+  .help{font-size:12px;color:var(--ink-soft);margin-top:6px}
+
+  /* ---------- RODAPÉ / AÇÕES ---------- */
+  .actions{display:flex;align-items:center;gap:12px;margin-top:26px;padding-top:22px;border-top:1px solid var(--line-soft)}
+  .btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--graphite);color:#fff;border:none;border-radius:10px;padding:11px 22px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+  .btn-primary:hover{background:#222225}
+  .btn-ghost{display:inline-flex;align-items:center;background:none;color:var(--ink-soft);border:none;border-radius:10px;padding:11px 16px;font:inherit;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;transition:.13s}
+  .btn-ghost:hover{color:var(--ink)}
+  .actions .danger{margin-left:auto;font:inherit;font-size:13.5px;font-weight:500;color:#9a6a62;background:none;border:none;cursor:pointer}
+  .actions .danger:hover{color:#7d5049}
+
+  @media (max-width:880px){
+    aside{display:none}
+    .card{padding:22px}
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark">Salão<em>App</em></span>
+      <span class="tag">Gestão do salão</span>
+    </div>
+    <div class="right">
+      <div class="date-pill">Quinta, <b>18 de junho</b></div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside>
+      <div class="nav-label">Menu</div>
+      <nav>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Agendamentos</a>
+        <a class="nav-item" href="clientes.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg> Clientes</a>
+        <a class="nav-item active" href="profissionais.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg> Profissionais <span class="dot"></span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg> Serviços</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18l-1.5 12.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5z"/><path d="M8 7a4 4 0 0 1 8 0"/></svg> Produtos</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg> Financeiro</a>
+      </nav>
+      <div class="foot">
+        <a class="logout" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Sair</a>
+      </div>
+    </aside>
+
+    <main>
+      <div class="frame">
+        <!-- CAMINHO -->
+        <div class="crumb">
+          <a href="profissionais.html">Profissionais</a>
+          <span class="sep">/</span>
+          <span class="cur">Editar profissional</span>
+        </div>
+
+        <!-- TÍTULO (no cadastro: monograma vazio "+" e título "Novo profissional") -->
+        <div class="form-head">
+          <span class="mono">CB</span>
+          <div>
+            <h1 class="serif">Carla Bianchi</h1>
+            <div class="meta"><span class="pt"></span> Profissional ativo · cabeleireira · cadastrada em 04/02/2024</div>
+          </div>
+        </div>
+
+        <!-- FORM -->
+        <div class="card">
+          <form>
+            <div class="field">
+              <label class="lbl">Nome <span class="req">*</span></label>
+              <input class="control" type="text" value="Carla Bianchi" maxlength="200" required />
+            </div>
+
+            <div class="field">
+              <label class="lbl">Telefone</label>
+              <input class="control" type="text" value="11987124455" inputmode="numeric" maxlength="15" placeholder="11999998888" />
+              <p class="help">Apenas dígitos (8 a 15).</p>
+            </div>
+
+            <div class="field">
+              <label class="lbl">E-mail</label>
+              <input class="control" type="text" value="carla.bianchi@salaoapp.com" maxlength="200" placeholder="exemplo@dominio.com" />
+            </div>
+
+            <div class="field">
+              <label class="lbl">Observações</label>
+              <textarea class="control" rows="3" placeholder="Especialidades, horários, anotações internas…">Especialista em coloração e mechas. Atende de terça a sábado, das 9h às 18h.</textarea>
+            </div>
+
+            <div class="actions">
+              <button class="btn-primary" type="submit">Salvar</button>
+              <a class="btn-ghost" href="profissionais.html">Cancelar</a>
+              <button class="danger" type="button">Desativar profissional</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

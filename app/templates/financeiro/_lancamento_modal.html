@@ -1,0 +1,40 @@
+{# Fragmento HTMX — detalhe de um lançamento (despesa/receita). NÃO extends base. #}
+<div class="cmd-head">
+  <div class="cmd-eyebrow">{{ 'Receita' if l.tipo == 'receita' else 'Despesa' }}</div>
+  <h2 class="serif">{{ l.descricao }}</h2>
+  <div class="meta">
+    {{ l.data_fmt }} · <b>{{ l.categoria }}</b>
+    {%- if l.usuario %} · por <b>{{ l.usuario }}</b>{% endif %}
+  </div>
+</div>
+
+<div class="pay-summary">
+  {% if l.desconto and l.desconto > 0 %}
+  <div class="r"><span>Valor bruto</span><span>R$ {{ l.bruto|brl }}</span></div>
+  <div class="r desc"><span>Desconto{% if l.desc_tipo == 'pct' and l.pct is not none %} ({{ l.pct }}%){% endif %}</span><span>− R$ {{ l.desconto|brl }}</span></div>
+  {% endif %}
+  <div class="r grand"><span>{{ 'Total recebido' if l.tipo == 'receita' else 'Total pago' }}</span><b>R$ {{ l.valor|brl }}</b></div>
+</div>
+
+{% if l.observacoes %}
+  <div class="cmd-seclbl">Observações</div>
+  <p style="font-size:14px;color:var(--ink-soft);line-height:1.5">{{ l.observacoes }}</p>
+{% endif %}
+
+<div class="cmd-foot">
+  <button type="button" class="btn-ghost" style="padding-left:0"
+          onclick="window.dispatchEvent(new CustomEvent('close-modal'))">Fechar</button>
+  {% if l.do_agendamento %}
+    <button type="button" class="btn-primary" style="margin-left:auto"
+            hx-get="/financeiro/comandas/{{ l.agendamento_id }}"
+            hx-target="#fin-modal-content" hx-swap="innerHTML">
+      Ver comanda completa →
+    </button>
+  {% else %}
+    <a class="btn-ghost" style="margin-left:auto" href="/financeiro/{{ l.id }}/editar">Editar</a>
+    <form method="post" action="/financeiro/{{ l.id }}/excluir"
+          onsubmit="return confirm('Excluir este lançamento?')">
+      <button type="submit" class="btn-danger-outline">Excluir</button>
+    </form>
+  {% endif %}
+</div>

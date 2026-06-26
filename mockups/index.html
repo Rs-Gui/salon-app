@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SalãoApp · Mockups de Identidade Visual</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Hanken Grotesk',sans-serif;background:#1a1614;color:#f3ede6;min-height:100vh;padding:56px 32px}
+  .wrap{max-width:1140px;margin:0 auto}
+  .eyebrow{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:#c2727e;margin-bottom:12px}
+  h1{font-family:'Fraunces',serif;font-weight:400;font-size:46px;line-height:1.05;margin-bottom:10px}
+  h1 em{font-style:italic;color:#c19a5b}
+  .lead{color:#b8aa9e;font-size:16px;max-width:660px;margin-bottom:14px}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;font-size:12.5px;color:#9b8d80;margin-bottom:44px}
+  .legend b{color:#cbbfae;font-weight:600}
+
+  /* grupos por categoria */
+  .group{margin-bottom:40px}
+  .group-head{display:flex;align-items:baseline;gap:12px;padding-bottom:12px;margin-bottom:20px;border-bottom:1px solid #332b27}
+  .group-head h2{font-family:'Fraunces',serif;font-weight:400;font-size:26px;color:#f3ede6}
+  .group-head .num{font-size:12px;color:#7c6e62;font-variant-numeric:tabular-nums}
+  .group-head .meta{margin-left:auto;font-size:12px;color:#7c6e62}
+
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  a.card,div.card{display:block;text-decoration:none;color:inherit;border-radius:16px;overflow:hidden;border:1px solid #332b27;background:#221c18;transition:.2s}
+  a.card:hover{transform:translateY(-4px);border-color:#56463c}
+  .swatch{height:96px;display:flex}
+  .swatch span{flex:1}
+  .body{padding:18px}
+  .body h3{font-family:'Fraunces',serif;font-weight:600;font-size:20px;margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tagchip{font-family:'Hanken Grotesk';font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:5px}
+  .tag-apply{background:#3a3a2210;color:#c19a5b;border:1px solid #5a4a2e}
+  .tag-review{background:#2e3a3210;color:#7fb39a;border:1px solid #2f5a47}
+  .tag-soon{background:#2a2420;color:#8a7c6e;border:1px solid #3a3128}
+  .body p{font-size:13px;color:#b8aa9e;line-height:1.5}
+  .go{margin-top:14px;font-size:13px;font-weight:600;color:#c19a5b}
+
+  /* placeholder "em breve" */
+  div.card.soon{opacity:.5;cursor:default}
+  div.card.soon .swatch{filter:grayscale(.5)}
+  div.card.soon .go{color:#7c6e62}
+
+  @media(max-width:900px){.cards{grid-template-columns:1fr 1fr}}
+  @media(max-width:620px){.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="eyebrow">Identidade Visual · Mockups de todo o site</div>
+    <h1>Mockups do <em>SalãoApp</em></h1>
+    <p class="lead">Direção escolhida: <strong>Bruma</strong> — cinza neutro muito claro, acento taupe discreto, serifa editorial Fraunces. O plano é desenhar <strong>todas as telas</strong> antes de aplicar no app. Telas agrupadas por categoria abaixo.</p>
+    <div class="legend">
+      <span><b>🟡 A aplicar</b> — aprovada, na fila</span>
+      <span><b>⚪ Em revisão</b> — aguardando seu aval</span>
+      <span><b>· Em breve</b> — ainda não desenhada</span>
+    </div>
+
+    <!-- HOME -->
+    <section class="group">
+      <div class="group-head"><h2>Home</h2><span class="num">1 tela</span><span class="meta">1 pronta</span></div>
+      <div class="cards">
+        <a class="card" href="home.html">
+          <div class="swatch"><span style="background:#F4F4F3"></span><span style="background:#ECECEB"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span><span style="background:#28282A"></span></div>
+          <div class="body"><h3>Painel inicial <span class="tagchip tag-apply">A aplicar</span></h3><p>Saudação, indicadores do dia, próximos agendamentos e faturamento.</p><div class="go">Abrir →</div></div>
+        </a>
+      </div>
+    </section>
+
+    <!-- AGENDA -->
+    <section class="group">
+      <div class="group-head"><h2>Agenda</h2><span class="num">3 telas</span><span class="meta">aprovadas</span></div>
+      <div class="cards">
+        <a class="card" href="agenda.html">
+          <div class="swatch"><span style="background:#FFFFFF"></span><span style="background:#ECECEB"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Agenda do dia <span class="tagchip tag-apply">A aplicar</span></h3><p>Grade horário × profissional, blocos por duração, drag das colunas.</p><div class="go">Abrir →</div></div>
+        </a>
+        <a class="card" href="agenda-novo.html">
+          <div class="swatch"><span style="background:#FFFFFF"></span><span style="background:#ECECEB"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Novo agendamento <span class="tagchip tag-apply">A aplicar</span></h3><p>Modal de marcação: cliente, profissionais, serviços, data e hora.</p><div class="go">Abrir →</div></div>
+        </a>
+        <a class="card" href="agenda-detalhe.html">
+          <div class="swatch"><span style="background:#FFFFFF"></span><span style="background:#ECECEB"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Detalhe / editar <span class="tagchip tag-apply">A aplicar</span></h3><p>Card de detalhes com edição rápida de horário/duração e excluir.</p><div class="go">Abrir →</div></div>
+        </a>
+      </div>
+    </section>
+
+    <!-- CLIENTES -->
+    <section class="group">
+      <div class="group-head"><h2>Clientes</h2><span class="num">2 telas</span><span class="meta">aprovadas</span></div>
+      <div class="cards">
+        <a class="card" href="clientes.html">
+          <div class="swatch"><span style="background:#FFFFFF"></span><span style="background:#ECECEB"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#8A7C75"></span></div>
+          <div class="body"><h3>Lista de clientes <span class="tagchip tag-apply">A aplicar</span></h3><p>Roster com monograma, status ativo/inativo e ações. Busca proposta.</p><div class="go">Abrir →</div></div>
+        </a>
+        <a class="card" href="clientes-form.html">
+          <div class="swatch"><span style="background:#F4F4F3"></span><span style="background:#FFFFFF"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Cadastro / edição <span class="tagchip tag-apply">A aplicar</span></h3><p>Nome, telefone, email e observações com cabeçalho editorial.</p><div class="go">Abrir →</div></div>
+        </a>
+      </div>
+    </section>
+
+    <!-- PROFISSIONAIS -->
+    <section class="group">
+      <div class="group-head"><h2>Profissionais</h2><span class="num">2 telas</span><span class="meta">aprovadas</span></div>
+      <div class="cards">
+        <a class="card" href="profissionais.html">
+          <div class="swatch"><span style="background:#FFFFFF"></span><span style="background:#ECECEB"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#8A7C75"></span></div>
+          <div class="body"><h3>Lista de profissionais <span class="tagchip tag-apply">A aplicar</span></h3><p>Equipe do salão com monograma, status e ações (incl. reativar/excluir).</p><div class="go">Abrir →</div></div>
+        </a>
+        <a class="card" href="profissionais-form.html">
+          <div class="swatch"><span style="background:#F4F4F3"></span><span style="background:#FFFFFF"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Cadastro / edição <span class="tagchip tag-apply">A aplicar</span></h3><p>Nome, telefone, email e observações com cabeçalho editorial.</p><div class="go">Abrir →</div></div>
+        </a>
+      </div>
+    </section>
+
+    <!-- SERVIÇOS -->
+    <section class="group">
+      <div class="group-head"><h2>Serviços</h2><span class="num">2 telas</span><span class="meta">aprovadas</span></div>
+      <div class="cards">
+        <a class="card" href="servicos.html">
+          <div class="swatch"><span style="background:#FFFFFF"></span><span style="background:#ECECEB"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#8A7C75"></span></div>
+          <div class="body"><h3>Lista de serviços <span class="tagchip tag-apply">A aplicar</span></h3><p>Catálogo com tile de ícone: nome, preço, duração e status.</p><div class="go">Abrir →</div></div>
+        </a>
+        <a class="card" href="servicos-form.html">
+          <div class="swatch"><span style="background:#F4F4F3"></span><span style="background:#FFFFFF"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Cadastro / edição <span class="tagchip tag-apply">A aplicar</span></h3><p>Nome, preço, duração em minutos e observações.</p><div class="go">Abrir →</div></div>
+        </a>
+      </div>
+    </section>
+
+    <!-- PRODUTOS -->
+    <section class="group">
+      <div class="group-head"><h2>Produtos</h2><span class="num">4 telas</span><span class="meta">aprovadas</span></div>
+      <div class="cards">
+        <a class="card" href="produtos.html">
+          <div class="swatch"><span style="background:#FFFFFF"></span><span style="background:#ECECEB"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Lista / estoque <span class="tagchip tag-apply">A aplicar</span></h3><p>Estoque com alertas dessaturados (baixo/sem), preço e ações compactas.</p><div class="go">Abrir →</div></div>
+        </a>
+        <a class="card" href="produtos-form.html">
+          <div class="swatch"><span style="background:#F4F4F3"></span><span style="background:#FFFFFF"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Cadastro / edição <span class="tagchip tag-apply">A aplicar</span></h3><p>Preço, custo, estoque inicial/mínimo, unidade e observações.</p><div class="go">Abrir →</div></div>
+        </a>
+        <a class="card" href="produtos-historico.html">
+          <div class="swatch"><span style="background:#FFFFFF"></span><span style="background:#ECECEB"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Histórico de movimentação <span class="tagchip tag-apply">A aplicar</span></h3><p>Entradas e saídas por produto, com tipo, quantidade e observações.</p><div class="go">Abrir →</div></div>
+        </a>
+        <a class="card" href="produtos-movimentacao.html">
+          <div class="swatch"><span style="background:#FFFFFF"></span><span style="background:#ECECEB"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Movimentar estoque <span class="tagchip tag-apply">A aplicar</span></h3><p>Modal de entrada/saída de quantidade sobre a lista.</p><div class="go">Abrir →</div></div>
+        </a>
+      </div>
+    </section>
+
+    <!-- FINANCEIRO -->
+    <section class="group">
+      <div class="group-head"><h2>Financeiro</h2><span class="num">4 telas</span><span class="meta">⚪ em revisão · novo</span></div>
+      <div class="cards">
+        <a class="card" href="financeiro.html">
+          <div class="swatch"><span style="background:#FFFFFF"></span><span style="background:#e7ede7"></span><span style="background:#efe6e4"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Painel financeiro <span class="tagchip tag-review">Em revisão</span></h3><p>Entradas/Saídas/Saldo do período, filtro por mês e livro de lançamentos.</p><div class="go">Abrir →</div></div>
+        </a>
+        <a class="card" href="financeiro-form.html">
+          <div class="swatch"><span style="background:#F4F4F3"></span><span style="background:#FFFFFF"></span><span style="background:#e7ede7"></span><span style="background:#efe6e4"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Novo lançamento <span class="tagchip tag-review">Em revisão</span></h3><p>Receita avulsa ou despesa: tipo, valor, data, categoria e descrição.</p><div class="go">Abrir →</div></div>
+        </a>
+        <a class="card" href="agenda-pagamento.html">
+          <div class="swatch"><span style="background:#FFFFFF"></span><span style="background:#ECECEB"></span><span style="background:#e7ede7"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Registrar pagamento <span class="tagchip tag-review">Em revisão</span></h3><p>Modal na agenda: soma os serviços e gera a receita do atendimento.</p><div class="go">Abrir →</div></div>
+        </a>
+        <a class="card" href="financeiro-categorias.html">
+          <div class="swatch"><span style="background:#FFFFFF"></span><span style="background:#e7ede7"></span><span style="background:#efe6e4"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Categorias <span class="tagchip tag-review">Em revisão</span></h3><p>Gestão das categorias de receita e despesa usadas nos lançamentos.</p><div class="go">Abrir →</div></div>
+        </a>
+      </div>
+    </section>
+
+    <!-- SISTEMA -->
+    <section class="group">
+      <div class="group-head"><h2>Sistema &amp; acesso</h2><span class="num">3 telas</span><span class="meta">aprovadas</span></div>
+      <div class="cards">
+        <a class="card" href="login.html">
+          <div class="swatch"><span style="background:#F4F4F3"></span><span style="background:#FFFFFF"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Login <span class="tagchip tag-apply">A aplicar</span></h3><p>Tela de acesso enxuta, card central com a marca SalãoApp.</p><div class="go">Abrir →</div></div>
+        </a>
+        <a class="card" href="setup.html">
+          <div class="swatch"><span style="background:#F4F4F3"></span><span style="background:#FFFFFF"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Configuração inicial <span class="tagchip tag-apply">A aplicar</span></h3><p>Primeiro acesso: criação da conta de administrador.</p><div class="go">Abrir →</div></div>
+        </a>
+        <a class="card" href="usuarios.html">
+          <div class="swatch"><span style="background:#FFFFFF"></span><span style="background:#ECECEB"></span><span style="background:#EAE5E2"></span><span style="background:#A89A93"></span><span style="background:#38383B"></span></div>
+          <div class="body"><h3>Usuários <span class="tagchip tag-apply">A aplicar</span></h3><p>Admin: criar usuários, papéis, redefinir senha e ativar/desativar.</p><div class="go">Abrir →</div></div>
+        </a>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>

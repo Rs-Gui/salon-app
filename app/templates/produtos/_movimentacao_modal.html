@@ -1,0 +1,38 @@
+{# Fragmento HTMX — injetado em #modal-content da lista de produtos. NÃO extends base. #}
+<h2 class="modal-title serif">{{ titulo }}</h2>
+<p class="modal-sub">{{ produto.nome }}</p>
+
+<span class="stockchip {{ 'in' if tipo == 'entrada' else 'out' }}">
+  <span class="lbl">Estoque atual</span>
+  <span class="qty">{{ produto.estoque_atual }}</span>
+  <span class="un">{{ produto.unidade }}</span>
+</span>
+
+{% if erro %}
+  <div class="banner-erro">{{ erro }}</div>
+{% endif %}
+
+<form hx-post="/produtos/{{ produto.id }}/movimentar"
+      hx-target="#modal-content"
+      hx-swap="innerHTML">
+  <input type="hidden" name="tipo" value="{{ tipo }}" />
+
+  <div class="field">
+    <label class="lbl" for="quantidade">Quantidade <span class="req">*</span></label>
+    <input class="control" id="quantidade" type="number" name="quantidade" min="1" step="1" required autofocus
+           placeholder="Ex.: 5" value="{{ quantidade or '' }}" />
+  </div>
+
+  <div class="field">
+    <label class="lbl" for="mov-obs">Observações</label>
+    <textarea class="control" id="mov-obs" name="observacoes" rows="3"
+              placeholder="{% if tipo == 'entrada' %}Ex.: compra na fornecedora X{% else %}Ex.: usado no atendimento de Y{% endif %}">{{ observacoes or '' }}</textarea>
+  </div>
+
+  <div class="actions" style="margin-top:18px;padding-top:18px">
+    <button class="btn-primary" type="submit" style="margin:0">
+      {% if tipo == 'entrada' %}+ Adicionar{% else %}− Retirar{% endif %}
+    </button>
+    <button class="btn-ghost" type="button" onclick="window.dispatchEvent(new CustomEvent('close-modal'))">Cancelar</button>
+  </div>
+</form>

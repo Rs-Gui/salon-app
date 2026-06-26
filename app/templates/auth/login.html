@@ -1,0 +1,23 @@
+{% extends "base_auth.html" %}
+
+{% block content %}
+<h2 class="serif">Entrar</h2>
+<p class="sub">Acesse sua conta para gerenciar o salão.</p>
+
+{% if erro %}
+  <div class="banner-erro">{{ erro }}</div>
+{% endif %}
+
+<form method="post" action="/login">
+  <div class="field">
+    <label class="lbl" for="nome_usuario">Nome de usuário</label>
+    <input class="control" id="nome_usuario" name="nome_usuario" type="text" required autofocus
+           value="{{ nome_usuario or '' }}" autocomplete="username" />
+  </div>
+  <div class="field">
+    <label class="lbl" for="senha">Senha</label>
+    <input class="control" id="senha" name="senha" type="password" required autocomplete="current-password" />
+  </div>
+  <button class="btn-primary btn-block" type="submit">Entrar</button>
+</form>
+{% endblock %}

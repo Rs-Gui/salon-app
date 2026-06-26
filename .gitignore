@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Segredos
+.secret_key
+
+# Banco de dados (dados de teste/demo locais)
+*.db
+*.db.bak
+*.db.bak2
+
+# Artefatos do WSL/Windows
+*:Zone.Identifier
+
+# Screenshots temporários
+scratchpad_shots/
+
+# Editor / SO
+.DS_Store
+*.swp

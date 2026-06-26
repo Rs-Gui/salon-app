@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-head">
+  <h1 class="page-title serif">Movimentações — {{ produto.nome }}</h1>
+  <a class="btn-ghost" href="/produtos/" style="margin-left:auto">← Voltar para produtos</a>
+</div>
+
+<div class="summary">
+  <div class="item">
+    <span class="k">Estoque atual</span>
+    <span class="v"><b>{{ produto.estoque_atual }}</b> {{ produto.unidade }}</span>
+  </div>
+  <div class="divv"></div>
+  <div class="item">
+    <span class="k">Mínimo</span>
+    <span class="v"><b>{{ produto.estoque_minimo }}</b> {{ produto.unidade }}</span>
+  </div>
+  {% if produto.estoque_minimo > 0 and produto.estoque_atual <= produto.estoque_minimo %}
+    <span class="alert">Abaixo do mínimo</span>
+  {% endif %}
+</div>
+
+{% if not movimentacoes %}
+  <div class="empty">
+    <p>Nenhuma movimentação registrada para este produto ainda.</p>
+  </div>
+{% else %}
+  <div class="roster cap-rows">
+    <table>
+      <thead>
+        <tr>
+          <th>Data/hora</th>
+          <th>Tipo</th>
+          <th class="right">Quantidade</th>
+          <th class="hide-sm">Observações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in movimentacoes %}
+        <tr>
+          <td class="when">{{ m.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>
+            {% if m.tipo == 'entrada' %}
+              <span class="tipo-pill in"><span class="pt"></span> Entrada</span>
+            {% elif m.tipo == 'saida_venda' %}
+              <span class="tipo-pill saida"><span class="pt"></span> Venda</span>
+            {% else %}
+              <span class="tipo-pill saida"><span class="pt"></span> Saída</span>
+            {% endif %}
+          </td>
+          <td class="right">
+            <span class="amt {{ 'in' if m.tipo == 'entrada' else 'out' }}">{{ '+' if m.tipo == 'entrada' else '−' }}{{ m.quantidade }}<span class="un">{{ produto.unidade }}</span></span>
+          </td>
+          <td class="hide-sm obs">{{ m.observacoes or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}

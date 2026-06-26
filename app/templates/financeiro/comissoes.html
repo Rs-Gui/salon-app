@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-head">
+  <h1 class="page-title serif">Financeiro</h1>
+  <span class="count"><b>R$ {{ total_geral|brl }}</b> em serviços pagos · {{ mes_label | lower }}</span>
+</div>
+
+{# ---------- abas Lançamentos | Comandas | Comissões ---------- #}
+<div class="fin-tabs">
+  <a href="/financeiro/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg> Lançamentos</a>
+  <a href="/financeiro/comandas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg> Comandas</a>
+  <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Comissões</a>
+</div>
+
+{# ---------- toolbar: navegação por mês + busca ---------- #}
+<div class="toolbar">
+  <div class="stepper">
+    <a href="/financeiro/comissoes?mes={{ mes_anterior }}" aria-label="Mês anterior"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m15 18-6-6 6-6"/></svg></a>
+    <span class="month">{{ mes_label }}</span>
+    <a href="/financeiro/comissoes?mes={{ mes_proximo }}" aria-label="Próximo mês"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 18 6-6-6-6"/></svg></a>
+  </div>
+  <label class="search">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="text" id="com-busca" placeholder="Buscar profissional" autocomplete="off" />
+  </label>
+</div>
+
+{% if not comissoes %}
+  <div class="empty">
+    <p>Nenhum serviço pago em {{ mes_label | lower }}. As comissões aparecem quando os atendimentos são pagos.</p>
+  </div>
+{% else %}
+  <div class="roster cap-rows" style="max-height:286px">
+    <table>
+      <thead>
+        <tr>
+          <th>Profissional</th>
+          <th>Serviços</th>
+          <th class="right">Total (pago)</th>
+          <th class="right" style="width:70px"></th>
+        </tr>
+      </thead>
+      <tbody id="com-tbody">
+        {% for c in comissoes %}
+        <tr class="comanda-row" data-busca="{{ c.nome | lower }}"
+            hx-get="/financeiro/comissoes/{{ c.id }}?mes={{ mes_str }}"
+            hx-target="#fin-modal-content" hx-swap="innerHTML"
+            onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
+          <td><span class="desc">{{ c.nome }}{% if not c.ativo %} <span class="from">inativo</span>{% endif %}</span></td>
+          <td><span class="muted-cell">{{ c.servicos | length }} serviço{{ 's' if c.servicos | length != 1 }}</span></td>
+          <td class="right"><span class="amount in">R$ {{ c.total|brl }}</span></td>
+          <td class="right"><span class="see">Ver ›</span></td>
+        </tr>
+        {% endfor %}
+        <tr id="com-sem-resultados" style="display:none">
+          <td colspan="4" class="muted-cell" style="text-align:center;padding:32px">
+            Nenhum profissional encontrado para essa busca.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="hint">Mostra os serviços <b>já pagos</b> no mês, pelo <b>valor recebido</b>. Produtos não entram. Atendimento com mais de um profissional aparece para cada um (selo “compartilhado”). Clique num profissional para ver o detalhe; o pagamento da comissão é registrado como uma despesa no Financeiro.</p>
+{% endif %}
+
+{# ---------- modal de detalhe (carregado via HTMX) ---------- #}
+<div x-data="{open:false}"
+     @open-modal.window="open=true; document.body.style.overflow='hidden'"
+     @close-modal.window="open=false; document.body.style.overflow=''"
+     @keydown.escape.window="open=false; document.body.style.overflow=''"
+     x-show="open" x-cloak class="modal-backdrop">
+  <div class="modal-card scroll-bege">
+    <button type="button" class="modal-close" aria-label="Fechar"
+            @click="open=false; document.body.style.overflow=''">&times;</button>
+    <div id="fin-modal-content"></div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var busca = document.getElementById('com-busca');
+    var tbody = document.getElementById('com-tbody');
+    if (!tbody) return;
+    var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr.comanda-row'));
+    var semResultados = document.getElementById('com-sem-resultados');
+    busca.addEventListener('input', function () {
+      var q = (busca.value || '').trim().toLowerCase();
+      var visiveis = 0;
+      rows.forEach(function (r) {
+        var ok = (r.getAttribute('data-busca') || '').indexOf(q) !== -1;
+        r.style.display = ok ? '' : 'none';
+        if (ok) visiveis++;
+      });
+      if (semResultados) semResultados.style.display = visiveis ? 'none' : '';
+    });
+  })();
+</script>
+{% endblock %}

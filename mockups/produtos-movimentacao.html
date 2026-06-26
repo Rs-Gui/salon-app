@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SalãoApp · Adicionar ao estoque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     PRODUTOS · MODAL movimentação (variante ENTRADA) · BRUMA
+     Diálogo centralizado sobre a tela de produtos esmaecida.
+     =========================================================== */
+  :root{
+    --bg:        #F4F4F3;
+    --surface:   #FFFFFF;
+    --surface-2: #ECECEB;
+    --ink:       #28282A;
+    --ink-soft:  #6E6E72;
+    --line:      #E5E5E3;
+    --line-soft: #EFEFED;
+    --accent:    #A89A93;
+    --accent-deep:#8A7C75;
+    --accent-soft:#EAE5E2;
+    --graphite:  #38383B;
+    --radius:    18px;
+    --shadow:    0 18px 40px -26px rgba(40,40,42,.30);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Hanken Grotesk',system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;height:100vh;overflow:hidden;
+  }
+  .serif{font-family:'Fraunces',Georgia,serif}
+
+  /* ---------- HEADER ---------- */
+  header.topbar{
+    display:flex;align-items:center;gap:24px;padding:18px 32px;
+    background:rgba(244,244,243,.9);border-bottom:1px solid var(--line);flex-shrink:0;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand .mark{font-family:'Fraunces',serif;font-weight:600;font-size:24px;color:var(--ink)}
+  .brand .mark em{color:var(--accent-deep);font-style:italic}
+  .brand .tag{font-size:11px;text-transform:uppercase;letter-spacing:.28em;color:var(--ink-soft)}
+  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:18px}
+  .date-pill{font-size:13px;color:var(--ink-soft)}
+  .date-pill b{color:var(--ink);font-weight:600}
+
+  /* ---------- SHELL ---------- */
+  .shell{display:flex;flex:1;min-height:0}
+  aside{width:248px;flex-shrink:0;padding:26px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--bg)}
+  .nav-label{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:#a7a7a9;padding:0 14px;margin-bottom:12px}
+  nav{display:flex;flex-direction:column;gap:2px}
+  .nav-item{display:flex;align-items:center;gap:13px;padding:11px 14px;border-radius:12px;color:var(--ink-soft);font-weight:500;font-size:14.5px;text-decoration:none;transition:.18s}
+  .nav-item svg{width:19px;height:19px;flex-shrink:0;opacity:.8}
+  .nav-item:hover{background:var(--surface-2);color:var(--ink)}
+  .nav-item.active{background:var(--graphite);color:#fff;box-shadow:var(--shadow)}
+  .nav-item.active svg{opacity:1}
+  .nav-item .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  aside .foot{margin-top:auto;padding-top:18px;border-top:1px solid var(--line)}
+  .logout{display:flex;align-items:center;gap:13px;padding:11px 14px;color:var(--ink-soft);font-size:14px;text-decoration:none;border-radius:12px}
+  .logout:hover{background:var(--surface-2);color:var(--accent-deep)}
+
+  /* ---------- MAIN (simplificado / esmaecido sob o modal) ---------- */
+  main{flex:1;overflow:hidden;padding:28px 32px 40px;display:flex;flex-direction:column;filter:blur(1px);opacity:.55;pointer-events:none}
+  .page-head{display:flex;align-items:flex-end;gap:16px;margin-bottom:20px}
+  .page-title{font-family:'Fraunces',serif;font-weight:500;font-size:28px;letter-spacing:-.4px;line-height:1}
+  .count{font-size:13px;color:var(--ink-soft);padding-bottom:2px}
+  .count b{color:var(--ink);font-weight:600}
+  .ghost-rows{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .ghost-rows .gr{display:flex;align-items:center;gap:14px;padding:16px 18px;border-top:1px solid var(--line-soft)}
+  .ghost-rows .gr:first-child{border-top:none}
+  .ghost-rows .gtile{width:38px;height:38px;border-radius:11px;background:var(--surface-2)}
+  .ghost-rows .gline{height:11px;border-radius:6px;background:var(--surface-2)}
+
+  /* ---------- BACKDROP + MODAL ---------- */
+  .backdrop{position:fixed;inset:0;background:rgba(40,40,42,.45);display:grid;place-items:center;padding:24px;z-index:50}
+  .modal{
+    width:100%;max-width:560px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:0 40px 80px -30px rgba(40,40,42,.55);
+    padding:28px;position:relative;
+  }
+  .modal .close{position:absolute;top:18px;right:18px;width:34px;height:34px;border-radius:10px;border:none;background:none;color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;transition:.13s}
+  .modal .close:hover{background:var(--surface-2);color:var(--ink)}
+  .modal h2{font-family:'Fraunces',serif;font-weight:500;font-size:23px;letter-spacing:-.3px;line-height:1.1;padding-right:36px}
+  .modal .prod{font-size:14px;color:var(--ink-soft);margin-top:4px}
+  .modal .prod b{color:var(--ink);font-weight:600}
+
+  /* chip estoque atual — verde-acinzentado fosco (contexto de entrada) */
+  .chip{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:9px;background:#E5EBE3;color:#5C7158;border:1px solid #D4DDD0}
+  .chip .pt{width:6px;height:6px;border-radius:50%;background:#5C7158}
+  .chip b{font-variant-numeric:tabular-nums}
+
+  /* campos */
+  .m-form{margin-top:22px}
+  .field{margin-bottom:18px}
+  .field:last-of-type{margin-bottom:0}
+  label.lbl{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:7px}
+  label.lbl .req{color:var(--accent-deep)}
+  .control{
+    width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;
+    padding:11px 14px;font:inherit;font-size:14.5px;color:var(--ink);transition:.15s;
+  }
+  .control::placeholder{color:#a7a7a9}
+  .control:focus{outline:none;background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  textarea.control{resize:vertical;min-height:78px;line-height:1.5}
+
+  /* ações */
+  .m-actions{display:flex;align-items:center;gap:12px;margin-top:24px;padding-top:20px;border-top:1px solid var(--line-soft)}
+  .btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--graphite);color:#fff;border:none;border-radius:10px;padding:11px 22px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+  .btn-primary:hover{background:#222225}
+  .btn-ghost{display:inline-flex;align-items:center;background:none;color:var(--ink-soft);border:none;border-radius:10px;padding:11px 16px;font:inherit;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;transition:.13s}
+  .btn-ghost:hover{color:var(--ink)}
+
+  @media (max-width:880px){
+    aside{display:none}
+    .modal{padding:22px}
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark">Salão<em>App</em></span>
+      <span class="tag">Gestão do salão</span>
+    </div>
+    <div class="right">
+      <div class="date-pill">Quinta, <b>18 de junho</b></div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside>
+      <div class="nav-label">Menu</div>
+      <nav>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Agendamentos</a>
+        <a class="nav-item" href="clientes.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg> Clientes</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg> Profissionais</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg> Serviços</a>
+        <a class="nav-item active" href="produtos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18l-1.5 12.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5z"/><path d="M8 7a4 4 0 0 1 8 0"/></svg> Produtos <span class="dot"></span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg> Financeiro</a>
+      </nav>
+      <div class="foot">
+        <a class="logout" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Sair</a>
+      </div>
+    </aside>
+
+    <!-- MAIN simplificado/esmaecido atrás do modal -->
+    <main>
+      <div class="page-head">
+        <h1 class="page-title serif">Produtos</h1>
+        <span class="count"><b>7</b> no total · 1 inativo · 2 em alerta</span>
+      </div>
+      <div class="ghost-rows">
+        <div class="gr"><span class="gtile"></span><span class="gline" style="width:30%"></span><span class="gline" style="width:12%;margin-left:auto"></span></div>
+        <div class="gr"><span class="gtile"></span><span class="gline" style="width:36%"></span><span class="gline" style="width:12%;margin-left:auto"></span></div>
+        <div class="gr"><span class="gtile"></span><span class="gline" style="width:28%"></span><span class="gline" style="width:12%;margin-left:auto"></span></div>
+        <div class="gr"><span class="gtile"></span><span class="gline" style="width:32%"></span><span class="gline" style="width:12%;margin-left:auto"></span></div>
+        <div class="gr"><span class="gtile"></span><span class="gline" style="width:26%"></span><span class="gline" style="width:12%;margin-left:auto"></span></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ MODAL (variante ENTRADA) ============ -->
+  <div class="backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+      <button class="close" type="button" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <h2 class="serif" id="m-title">Adicionar ao estoque</h2>
+      <p class="prod">Produto: <b>Óleo de Argan</b></p>
+      <span class="chip"><span class="pt"></span> Estoque atual <b>3</b> un</span>
+
+      <form class="m-form">
+        <div class="field">
+          <label class="lbl">Quantidade <span class="req">*</span></label>
+          <input class="control" type="number" min="1" placeholder="Ex.: 5" required />
+        </div>
+        <div class="field">
+          <label class="lbl">Observações</label>
+          <textarea class="control" rows="2" placeholder="Ex.: compra na fornecedora X"></textarea>
+        </div>
+
+        <div class="m-actions">
+          <button class="btn-primary" type="submit">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+            Adicionar
+          </button>
+          <a class="btn-ghost" href="produtos.html">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

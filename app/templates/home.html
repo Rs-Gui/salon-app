@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+{# No celular o escopo é só a agenda — manda direto pra ela (replace: não cria
+   loop no botão "voltar"). O painel completo fica para telas maiores. #}
+<script>
+  if (window.matchMedia('(max-width: 760px)').matches) {
+    window.location.replace('/agendamentos');
+  }
+</script>
+<div class="home-wrap">
+
+  <div class="home-hello">
+    <div class="eyebrow">Painel de hoje</div>
+    <h1>Olá, <em>{{ request.session.get('nome_exibicao') or request.session.get('nome_usuario') or 'bem-vindo(a)' }}</em></h1>
+    {% if total_hoje == 0 %}
+    <p>Nenhum atendimento marcado para hoje.</p>
+    {% elif total_hoje == 1 %}
+    <p>Você tem <b>1 atendimento</b> hoje.</p>
+    {% else %}
+    <p>Você tem <b>{{ total_hoje }} atendimentos</b> hoje.</p>
+    {% endif %}
+  </div>
+
+  <div class="home-card">
+    <div class="home-card-head">
+      <div>
+        <h2 class="serif">Próximos agendamentos</h2>
+        <div class="home-sub">Hoje · <span id="home-hoje"></span></div>
+      </div>
+      <a class="home-link" href="/agendamentos">Ver agenda →</a>
+    </div>
+
+    {% if proximos %}
+      {% for ag in proximos %}
+      <div class="home-appt{% if loop.first %} next{% endif %}">
+        <div class="time">{{ ag.hora }}</div>
+        <div class="home-who">
+          <div class="n">{{ ag.cliente_nome or 'Sem cliente' }}</div>
+          <div class="s">{{ ag.servicos | join(' + ') if ag.servicos else 'Sem serviço' }}</div>
+        </div>
+        <div class="home-pro">{{ ag.profissionais | join(', ') if ag.profissionais else '—' }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="home-empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <p>Nada mais marcado para hoje.</p>
+        <a class="home-link" href="/agendamentos">Abrir a agenda →</a>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if proximos %}
+  <p class="hint">Mostrando os atendimentos a partir de agora. Os já realizados ficam na agenda do dia.</p>
+  {% endif %}
+
+</div>
+
+<script>
+  // Data de hoje no subtítulo do card (client-side, mesmo padrão da topbar).
+  (function () {
+    var el = document.getElementById('home-hoje');
+    if (!el) return;
+    var d = new Date();
+    var dia = d.toLocaleDateString('pt-BR', { weekday: 'long' });
+    el.textContent = dia + ', ' + d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
+  })();
+</script>
+{% endblock %}
