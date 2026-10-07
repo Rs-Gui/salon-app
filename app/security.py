@@ -1,13 +1,16 @@
 import os
 import secrets
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 from passlib.context import CryptContext
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from app.database import get_session
+from app.models.tentativa_login import TentativaLogin
 from app.models.usuario import Usuario
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -35,6 +38,60 @@ def _carregar_secret_key() -> str:
 
 
 SECRET_KEY = _carregar_secret_key()
+
+# Em produção (Vercel) o cookie de sessão só trafega por HTTPS.
+EM_PRODUCAO = bool(os.environ.get("VERCEL"))
+
+SESSAO_HORAS = 24
+
+# Limite de logins errados por janela (por nome de usuário e por IP).
+LOGIN_JANELA_MIN = 15
+LOGIN_MAX_FALHAS_USUARIO = 5
+LOGIN_MAX_FALHAS_IP = 20
+
+# Quando definido, /setup só abre com ?token=<valor>. Evita que um estranho crie
+# o admin antes da dona num deploy público.
+SETUP_TOKEN = os.environ.get("SALAO_SETUP_TOKEN") or None
+
+
+def setup_token_valido(token: str | None) -> bool:
+    if SETUP_TOKEN is None:
+        return True
+    return secrets.compare_digest((token or "").encode(), SETUP_TOKEN.encode())
+
+
+def ip_do_cliente(request: Request) -> str:
+    # Na Vercel o IP real vem no x-forwarded-for (definido pela própria plataforma).
+    encaminhado = request.headers.get("x-forwarded-for", "")
+    if EM_PRODUCAO and encaminhado:
+        return encaminhado.split(",")[0].strip()
+    return request.client.host if request.client else "?"
+
+
+def login_bloqueado(session: Session, nome_usuario: str, ip: str) -> bool:
+    desde = datetime.now() - timedelta(minutes=LOGIN_JANELA_MIN)
+    falhas_usuario = session.exec(
+        select(func.count()).select_from(TentativaLogin)
+        .where(TentativaLogin.nome_usuario == nome_usuario)
+        .where(TentativaLogin.criado_em >= desde)
+    ).one()
+    if falhas_usuario >= LOGIN_MAX_FALHAS_USUARIO:
+        return True
+    falhas_ip = session.exec(
+        select(func.count()).select_from(TentativaLogin)
+        .where(TentativaLogin.ip == ip)
+        .where(TentativaLogin.criado_em >= desde)
+    ).one()
+    return falhas_ip >= LOGIN_MAX_FALHAS_IP
+
+
+def registrar_falha_login(session: Session, nome_usuario: str, ip: str) -> None:
+    # Limpa registros antigos para a tabela não crescer.
+    antigos = datetime.now() - timedelta(days=1)
+    for t in session.exec(select(TentativaLogin).where(TentativaLogin.criado_em < antigos)).all():
+        session.delete(t)
+    session.add(TentativaLogin(nome_usuario=nome_usuario[:60], ip=ip[:60]))
+    session.commit()
 
 
 def hash_senha(senha: str) -> str:
@@ -151,6 +208,12 @@ def usuario_atual(
 
     usuario_id = request.session.get("usuario_id")
     if not usuario_id:
+        raise RedirectRequired("/login", htmx=htmx)
+
+    # O cookie assinado não expira sozinho; o login vale SESSAO_HORAS.
+    login_em = request.session.get("login_em")
+    if not isinstance(login_em, (int, float)) or time.time() - login_em > SESSAO_HORAS * 3600:
+        request.session.clear()
         raise RedirectRequired("/login", htmx=htmx)
 
     usuario = obter_usuario_por_id(session, usuario_id)

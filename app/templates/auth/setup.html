@@ -9,6 +9,7 @@
 {% endif %}
 
 <form method="post" action="/setup">
+  <input type="hidden" name="token" value="{{ token or '' }}" />
   <div class="field">
     <label class="lbl" for="nome_usuario">Nome de usuário</label>
     <input class="control" id="nome_usuario" name="nome_usuario" type="text" required autofocus

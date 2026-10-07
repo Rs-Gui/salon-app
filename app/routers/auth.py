@@ -1,16 +1,21 @@
 import re
+import time
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlmodel import Session
 
 from app.database import get_session
 from app.security import (
     existe_algum_usuario,
     hash_senha,
+    ip_do_cliente,
+    login_bloqueado,
     normalizar_nome_usuario,
     obter_usuario_por_nome,
+    registrar_falha_login,
+    setup_token_valido,
     verificar_senha,
 )
 from app.models.usuario import Usuario
@@ -24,6 +29,7 @@ _RE_NOME = re.compile(r"^[a-z0-9._-]{3,30}$")
 def _iniciar_sessao(request: Request, usuario: Usuario) -> None:
     request.session.clear()
     request.session["usuario_id"] = usuario.id
+    request.session["login_em"] = int(time.time())
     request.session["papel"] = usuario.papel
     request.session["nome_usuario"] = usuario.nome_usuario
     request.session["nome_exibicao"] = usuario.nome_exibicao or usuario.nome_usuario
@@ -51,13 +57,26 @@ def _validar_nome(nome: str) -> str | None:
 # ---------- Setup (primeiro acesso → cria o admin) ----------
 
 
+def _setup_negado() -> HTMLResponse:
+    return HTMLResponse(
+        "<p>Configuração inicial protegida. Use o link de primeiro acesso.</p>",
+        status_code=403,
+    )
+
+
 @router.get("/setup")
-def get_setup(request: Request, session: Session = Depends(get_session)):
+def get_setup(
+    request: Request,
+    token: str | None = None,
+    session: Session = Depends(get_session),
+):
     if existe_algum_usuario(session):
         return RedirectResponse(url="/login", status_code=303)
+    if not setup_token_valido(token):
+        return _setup_negado()
     return templates.TemplateResponse(
         "auth/setup.html",
-        {"request": request, "erro": None, "nome_usuario": ""},
+        {"request": request, "erro": None, "nome_usuario": "", "token": token or ""},
     )
 
 
@@ -67,10 +86,13 @@ def post_setup(
     nome_usuario: str = Form(...),
     senha: str = Form(...),
     senha_confirmacao: str = Form(...),
+    token: str = Form(""),
     session: Session = Depends(get_session),
 ):
     if existe_algum_usuario(session):
         return RedirectResponse(url="/login", status_code=303)
+    if not setup_token_valido(token):
+        return _setup_negado()
 
     nome = normalizar_nome_usuario(nome_usuario)
     erro = _validar_nome(nome) or _validar_senha(senha, senha_confirmacao)
@@ -78,7 +100,7 @@ def post_setup(
     if erro:
         return templates.TemplateResponse(
             "auth/setup.html",
-            {"request": request, "erro": erro, "nome_usuario": nome_usuario},
+            {"request": request, "erro": erro, "nome_usuario": nome_usuario, "token": token},
             status_code=400,
         )
 
@@ -120,22 +142,30 @@ def post_login(
     if not existe_algum_usuario(session):
         return RedirectResponse(url="/setup", status_code=303)
 
-    def _erro_generico():
+    def _erro_generico(msg="Nome de usuário ou senha incorretos.", status=400):
         return templates.TemplateResponse(
             "auth/login.html",
             {
                 "request": request,
-                "erro": "Nome de usuário ou senha incorretos.",
+                "erro": msg,
                 "nome_usuario": nome_usuario,
             },
-            status_code=400,
+            status_code=status,
         )
 
     if len(senha) > 200:
         return _erro_generico()
 
+    nome = normalizar_nome_usuario(nome_usuario)
+    ip = ip_do_cliente(request)
+    if login_bloqueado(session, nome, ip):
+        return _erro_generico(
+            "Muitas tentativas. Aguarde 15 minutos e tente novamente.", status=429
+        )
+
     usuario = obter_usuario_por_nome(session, nome_usuario)
     if not usuario or not usuario.ativo or not verificar_senha(senha, usuario.senha_hash):
+        registrar_falha_login(session, nome, ip)
         return _erro_generico()
 
     _iniciar_sessao(request, usuario)

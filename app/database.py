@@ -44,6 +44,7 @@ def init_db() -> None:
     from app.models import produto  # noqa: F401
     from app.models import profissional  # noqa: F401
     from app.models import servico  # noqa: F401
+    from app.models import tentativa_login  # noqa: F401
     from app.models import usuario  # noqa: F401
 
     if not IS_SQLITE:

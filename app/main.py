@@ -18,6 +18,7 @@ from app.routers import profissionais as profissionais_router
 from app.routers import servicos as servicos_router
 from app.routers import usuarios as usuarios_router
 from app.security import (
+    EM_PRODUCAO,
     RedirectRequired,
     SECRET_KEY,
     montar_resposta_redirect,
@@ -35,16 +36,30 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+# Sem /docs, /redoc e /openapi.json: o app é só HTML e não precisa expor o mapa de rotas.
+app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
 app.add_middleware(
     SessionMiddleware,
     secret_key=SECRET_KEY,
     session_cookie="salao_session",
     same_site="lax",
-    https_only=False,
+    https_only=EM_PRODUCAO,
     max_age=None,
 )
+
+
+@app.middleware("http")
+async def _cabecalhos_seguranca(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "same-origin")
+    if EM_PRODUCAO:
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+        )
+    return response
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
