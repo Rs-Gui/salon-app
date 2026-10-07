@@ -15,13 +15,17 @@
         <div class="sv">{{ s.servico }}{% if s.shared %} <span class="shared-tag">compartilhado</span>{% endif %}</div>
         <div class="cl">{{ s.cliente }}{% if s.com %} · com {{ s.com }}{% endif %}</div>
       </div>
-      <div class="v">R$ {{ s.valor|brl }}</div>
+      <div class="v">
+        R$ {{ s.comissao|brl }}
+        <div class="cl" style="text-align:right">{{ ("%g"|format(s.pct))|replace(".", ",") }}% de R$ {{ s.valor|brl }}{% if s.shared %} ÷ {{ s.n_profs }}{% endif %}</div>
+      </div>
     </div>
     {% endfor %}
   </div>
 
   <div class="pay-summary">
-    <div class="r grand"><span>Total dos serviços</span><b>R$ {{ c.total|brl }}</b></div>
+    <div class="r"><span>Total dos serviços</span><span>R$ {{ c.total|brl }}</span></div>
+    <div class="r grand"><span>Comissão a pagar</span><b>R$ {{ c.comissao|brl }}</b></div>
   </div>
 {% else %}
   <p style="padding:8px 0;color:var(--ink-soft)">Sem serviços pagos no período.</p>
@@ -30,9 +34,9 @@
 <div class="cmd-foot">
   <button type="button" class="btn-ghost" style="padding-left:0"
           onclick="window.dispatchEvent(new CustomEvent('close-modal'))">Fechar</button>
-  {% if c.servicos %}
+  {% if c.comissao > 0 %}
   <a class="btn-primary" style="margin-left:auto"
-     href="/financeiro/novo?tipo=despesa&descricao={{ ('Comissão ' ~ c.nome ~ ' — ' ~ mes_label) | urlencode }}&valor={{ ('%.2f'|format(c.total))|replace('.', ',') }}">
+     href="/financeiro/novo?tipo=despesa&descricao={{ ('Comissão ' ~ c.nome ~ ' — ' ~ mes_label) | urlencode }}&valor={{ ('%.2f'|format(c.comissao))|replace('.', ',') }}">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
     Lançar pagamento
   </a>

@@ -50,7 +50,7 @@
   <form class="row" hx-post="/agendamentos/{{ agendamento.id }}/duracao" hx-target="#modal-content" hx-swap="innerHTML">
     <div>
       <label class="lbl-sm">Minutos</label>
-      <input class="control mini" type="number" name="duracao_override" min="1" max="300"
+      <input class="control mini" type="number" name="duracao_override" min="1" max="480"
              placeholder="Calculada: {{ duracao_calculada }} min"
              value="{{ duracao_default if duracao_default is not none else '' }}" />
     </div>

@@ -30,6 +30,22 @@ def _parse_preco(valor):
         return 0.0
 
 
+def _parse_pct(valor):
+    """'40', '40%', '12,5' -> float. Vazio = 0. Inválido/fora de 0–100 = None."""
+    v = (valor or "").strip().rstrip("%").strip().replace(",", ".")
+    if not v:
+        return 0.0
+    try:
+        n = float(v)
+    except ValueError:
+        return None
+    return n if 0 <= n <= 100 else None
+
+
+def _pct_input(pct: float) -> str:
+    return ("%g" % (pct or 0.0)).replace(".", ",")
+
+
 def _parse_duracao(valor):
     if valor is None:
         return None
@@ -101,6 +117,7 @@ def novo(request: Request):
             "servico": Servico(nome="", preco=0.0, duracao_minutos=30),
             "preco_input": "",
             "duracao_input": "",
+            "comissao_input": "",
             "erro": None,
         },
     )
@@ -121,6 +138,7 @@ def editar(servico_id: int, request: Request, session: Session = Depends(get_ses
             "servico": servico,
             "preco_input": _preco_input(servico.preco),
             "duracao_input": str(servico.duracao_minutos),
+            "comissao_input": _pct_input(servico.comissao_pct),
             "erro": None,
         },
     )
@@ -132,12 +150,14 @@ def criar(
     nome: str = Form(...),
     preco: str = Form(""),
     duracao_minutos: str = Form(""),
+    comissao_pct: str = Form(""),
     observacoes: str = Form(""),
     session: Session = Depends(get_session),
 ):
     nome_limpo = nome.strip()
     preco_val = _parse_preco(preco)
     duracao_val = _parse_duracao(duracao_minutos)
+    comissao_val = _parse_pct(comissao_pct)
     observacoes_n = _vazio_para_none(observacoes)
     if observacoes_n is not None and len(observacoes_n) > 2000:
         observacoes_n = observacoes_n[:2000]
@@ -148,8 +168,10 @@ def criar(
             erro = "Duração é obrigatória e deve ser um número inteiro maior que zero."
         elif duracao_val < 15:
             erro = "Duração mínima é de 15 minutos."
-        elif duracao_val > 300:
-            erro = "Duração não pode passar de 300 minutos (5h)."
+        elif duracao_val > 480:
+            erro = "Duração não pode passar de 480 minutos (8h)."
+        elif comissao_val is None:
+            erro = "Comissão deve ser um percentual entre 0 e 100."
         elif _servico_duplicado(session, nome_limpo):
             erro = "Já existe um serviço com esse nome."
 
@@ -158,6 +180,7 @@ def criar(
             nome=nome_limpo,
             preco=preco_val,
             duracao_minutos=duracao_val or 0,
+            comissao_pct=comissao_val or 0.0,
             observacoes=observacoes_n,
         )
         return templates.TemplateResponse(
@@ -170,6 +193,7 @@ def criar(
                 "servico": servico_mem,
                 "preco_input": preco.strip() if preco else "",
                 "duracao_input": duracao_minutos.strip() if duracao_minutos else "",
+                "comissao_input": comissao_pct.strip() if comissao_pct else "",
                 "erro": erro,
             },
             status_code=400,
@@ -179,6 +203,7 @@ def criar(
         nome=nome_limpo,
         preco=preco_val,
         duracao_minutos=duracao_val,
+        comissao_pct=comissao_val,
         observacoes=observacoes_n,
     )
     session.add(servico)
@@ -193,6 +218,7 @@ def atualizar(
     nome: str = Form(...),
     preco: str = Form(""),
     duracao_minutos: str = Form(""),
+    comissao_pct: str = Form(""),
     observacoes: str = Form(""),
     session: Session = Depends(get_session),
 ):
@@ -203,6 +229,7 @@ def atualizar(
     nome_limpo = nome.strip()
     preco_val = _parse_preco(preco)
     duracao_val = _parse_duracao(duracao_minutos)
+    comissao_val = _parse_pct(comissao_pct)
     observacoes_n = _vazio_para_none(observacoes)
     if observacoes_n is not None and len(observacoes_n) > 2000:
         observacoes_n = observacoes_n[:2000]
@@ -213,8 +240,10 @@ def atualizar(
             erro = "Duração é obrigatória e deve ser um número inteiro maior que zero."
         elif duracao_val < 15:
             erro = "Duração mínima é de 15 minutos."
-        elif duracao_val > 300:
-            erro = "Duração não pode passar de 300 minutos (5h)."
+        elif duracao_val > 480:
+            erro = "Duração não pode passar de 480 minutos (8h)."
+        elif comissao_val is None:
+            erro = "Comissão deve ser um percentual entre 0 e 100."
         elif _servico_duplicado(session, nome_limpo, ignorar_id=servico.id):
             erro = "Já existe um serviço com esse nome."
 
@@ -224,6 +253,7 @@ def atualizar(
             nome=nome_limpo,
             preco=preco_val,
             duracao_minutos=duracao_val or 0,
+            comissao_pct=comissao_val or 0.0,
             observacoes=observacoes_n,
             ativo=servico.ativo,
         )
@@ -237,6 +267,7 @@ def atualizar(
                 "servico": servico_mem,
                 "preco_input": preco.strip() if preco else "",
                 "duracao_input": duracao_minutos.strip() if duracao_minutos else "",
+                "comissao_input": comissao_pct.strip() if comissao_pct else "",
                 "erro": erro,
             },
             status_code=400,
@@ -245,6 +276,7 @@ def atualizar(
     servico.nome = nome_limpo
     servico.preco = preco_val
     servico.duracao_minutos = duracao_val
+    servico.comissao_pct = comissao_val
     servico.observacoes = observacoes_n
     session.add(servico)
     session.commit()

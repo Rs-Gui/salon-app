@@ -135,13 +135,23 @@
   {# ---------- Duração ---------- #}
   <div class="field" x-data>
     <label class="lbl">Duração (min)</label>
-    <input class="control" type="number" name="duracao_override" min="15" max="300"
+    <input class="control" type="number" name="duracao_override" min="15" max="480"
            :placeholder="$store.agServicos.sugestao + ' min'"
            value="{{ duracao_default if duracao_default is not none else '' }}" />
     <p class="help">
       Sugerido pelos serviços: <span x-text="$store.agServicos.sugestao"></span> min.
       Deixe vazio para usar o valor calculado.
     </p>
+  </div>
+
+  {# ---------- Encaixe ---------- #}
+  <div class="field">
+    <label class="toggle">
+      <input type="checkbox" name="encaixe" value="1" {% if agendamento.encaixe %}checked{% endif %} />
+      <span class="sw"></span>
+      É encaixe
+    </label>
+    <p class="help">Permite marcar por cima de outro horário do mesmo profissional (ex.: enquanto uma química age). Na agenda os dois aparecem lado a lado.</p>
   </div>
 
   {# ---------- Observações ---------- #}

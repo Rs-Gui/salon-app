@@ -32,5 +32,8 @@ class LancamentoFinanceiro(SQLModel, table=True):
         default=None, foreign_key="usuario.id", index=True
     )
     usuario_nome: str | None = None
+    # % de comissão do serviço no momento do pagamento (snapshot). None em
+    # lançamentos antigos/produtos/avulsos.
+    comissao_pct: float | None = None
     observacoes: str | None = None
     criado_em: datetime = Field(default_factory=datetime.now)

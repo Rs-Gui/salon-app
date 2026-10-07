@@ -50,8 +50,17 @@
         <div class="field">
           <label class="lbl" for="duracao_minutos">Duração em minutos <span class="req">*</span></label>
           <input class="control" id="duracao_minutos" type="number" name="duracao_minutos" required
-                 min="15" max="300" step="1" placeholder="30" value="{{ duracao_input }}" />
-          <p class="help">Entre 15 e 300 minutos.</p>
+                 min="15" max="480" step="1" placeholder="30" value="{{ duracao_input }}" />
+          <p class="help">Entre 15 e 480 minutos (8h).</p>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label class="lbl" for="comissao_pct">Comissão (%)</label>
+          <input class="control" id="comissao_pct" type="text" name="comissao_pct" inputmode="decimal"
+                 placeholder="0" value="{{ comissao_input }}" />
+          <p class="help">Parte do valor recebido que vai para o profissional. Com dois profissionais no atendimento, divide entre eles.</p>
         </div>
       </div>
 

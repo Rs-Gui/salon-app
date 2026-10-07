@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlmodel import Session, SQLModel, create_engine
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -68,8 +68,31 @@ def init_db() -> None:
         # Migrações manuais só existem para bancos SQLite antigos; no Postgres o
         # create_all já cria o schema completo.
         _migrar_schema()
+    _migrar_colunas_novas()
     _seed_categorias_financeiras()
     _garantir_superadmin()
+
+
+# Colunas adicionadas depois do deploy em Postgres: valem para os dois bancos
+# (SQL portátil; detecção de coluna via inspector, não PRAGMA).
+_COLUNAS_NOVAS = (
+    ("servico", "comissao_pct", "FLOAT NOT NULL DEFAULT 0"),
+    ("lancamentofinanceiro", "comissao_pct", "FLOAT"),
+    ("agendamento", "encaixe", "BOOLEAN NOT NULL DEFAULT FALSE"),
+)
+
+
+def _migrar_colunas_novas() -> None:
+    with engine.connect() as conn:
+        insp = inspect(conn)
+        for tabela, coluna, ddl in _COLUNAS_NOVAS:
+            try:
+                cols = {c["name"] for c in insp.get_columns(tabela)}
+                if coluna not in cols:
+                    conn.execute(text(f"ALTER TABLE {tabela} ADD COLUMN {coluna} {ddl}"))
+                    conn.commit()
+            except Exception:
+                conn.rollback()
 
 
 def _garantir_superadmin() -> None:

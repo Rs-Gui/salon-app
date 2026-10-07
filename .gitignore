@@ -23,3 +23,6 @@ scratchpad_shots/
 # Editor / SO
 .DS_Store
 *.swp
+
+# Variáveis locais (ex.: DATABASE_URL do Neon para scripts)
+.env

@@ -69,14 +69,14 @@
               {# A grade tem 1 célula por 30 min. Ocupa 1 célula (≤30min) → tudo na
                  mesma linha; ocupa 2+ células (>30min) → cliente e serviço separados. #}
               {% set uma_linha = b.duracao_efetiva <= 30 %}
-              <div class="appt{% if uma_linha %} short{% endif %}{% if b.tem_inativo %} muted{% endif %}"
-                   style="top: {{ b.top_px }}px; height: {{ b.height_px }}px"
+              <div class="appt{% if uma_linha %} short{% endif %}{% if b.tem_inativo %} muted{% endif %}{% if b.encaixe %} encaixe{% endif %}"
+                   style="top: {{ b.top_px }}px; height: {{ b.height_px }}px{% if b.lanes > 1 %}; left: calc(5px + (100% - 10px) * {{ b.lane }} / {{ b.lanes }}); right: auto; width: calc((100% - 10px) / {{ b.lanes }} - 2px){% endif %}"
                    {% if b.tem_inativo %}title="Inclui profissional(is) inativo(s)"{% endif %}
                    hx-get="/agendamentos/{{ b.id }}/card"
                    hx-target="#modal-content" hx-swap="innerHTML"
                    onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
                 <div class="appt-top">
-                  <span class="c">{{ b.cliente_nome or "—" }}</span>
+                  <span class="c">{% if b.encaixe %}<span class="enc-tag" title="Encaixe">E</span>{% endif %}{{ b.cliente_nome or "—" }}</span>
                   {# 1 célula: serviço ao lado, mas só se couber (decidido por JS). #}
                   {% if uma_linha and b.servicos %}
                     <span class="s-inline">{{ b.servicos | join(", ") }}</span>
@@ -143,12 +143,12 @@
           {% endfor %}
           {# Blocos de atendimento (altura = duração) #}
           {% for b in blocos_por_profissional.get(p.id, []) %}
-            <div class="m-appt{% if b.duracao_efetiva <= 30 %} compact{% endif %}{% if b.tem_inativo %} muted{% endif %}"
-                 style="top:{{ (b.top_px * 1.5) | round | int }}px;height:{{ (b.duracao_efetiva * 1.5) | round | int }}px"
+            <div class="m-appt{% if b.duracao_efetiva <= 30 %} compact{% endif %}{% if b.tem_inativo %} muted{% endif %}{% if b.encaixe %} encaixe{% endif %}"
+                 style="top:{{ (b.top_px * 1.5) | round | int }}px;height:{{ (b.duracao_efetiva * 1.5) | round | int }}px{% if b.lanes > 1 %};left:calc(2px + (100% - 2px) * {{ b.lane }} / {{ b.lanes }});right:auto;width:calc((100% - 2px) / {{ b.lanes }} - 3px){% endif %}"
                  hx-get="/agendamentos/{{ b.id }}/card"
                  hx-target="#modal-content" hx-swap="innerHTML"
                  onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
-              <span class="at">{{ b.hora }} · {{ b.duracao_efetiva }} min</span>
+              <span class="at">{{ b.hora }} · {{ b.duracao_efetiva }} min{% if b.encaixe %} · encaixe{% endif %}</span>
               <span class="ac">{{ b.cliente_nome or "—" }}</span>
               {% if b.servicos %}<span class="as">{{ b.servicos | join(", ") }}</span>{% endif %}
             </div>

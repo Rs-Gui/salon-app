@@ -8,6 +8,9 @@ class Agendamento(SQLModel, table=True):
     data_hora: datetime = Field(index=True)
     cliente_id: int | None = Field(default=None, foreign_key="cliente.id", index=True)
     duracao_override: int | None = None
+    # Encaixe: sobrepõe outro horário do mesmo profissional de propósito
+    # (não bloqueia nem é bloqueado pela checagem de conflito).
+    encaixe: bool = Field(default=False)
     observacoes: str | None = None
     criado_em: datetime = Field(default_factory=datetime.now)
 

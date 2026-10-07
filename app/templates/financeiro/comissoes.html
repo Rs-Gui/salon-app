@@ -37,7 +37,8 @@
         <tr>
           <th>Profissional</th>
           <th>Serviços</th>
-          <th class="right">Total (pago)</th>
+          <th class="right">Serviços pagos</th>
+          <th class="right">Comissão</th>
           <th class="right" style="width:70px"></th>
         </tr>
       </thead>
@@ -49,12 +50,13 @@
             onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
           <td><span class="desc">{{ c.nome }}{% if not c.ativo %} <span class="from">inativo</span>{% endif %}</span></td>
           <td><span class="muted-cell">{{ c.servicos | length }} serviço{{ 's' if c.servicos | length != 1 }}</span></td>
-          <td class="right"><span class="amount in">R$ {{ c.total|brl }}</span></td>
+          <td class="right"><span class="muted-cell">R$ {{ c.total|brl }}</span></td>
+          <td class="right"><span class="amount in">R$ {{ c.comissao|brl }}</span></td>
           <td class="right"><span class="see">Ver ›</span></td>
         </tr>
         {% endfor %}
         <tr id="com-sem-resultados" style="display:none">
-          <td colspan="4" class="muted-cell" style="text-align:center;padding:32px">
+          <td colspan="5" class="muted-cell" style="text-align:center;padding:32px">
             Nenhum profissional encontrado para essa busca.
           </td>
         </tr>
@@ -62,7 +64,7 @@
     </table>
   </div>
 
-  <p class="hint">Mostra os serviços <b>já pagos</b> no mês, pelo <b>valor recebido</b>. Produtos não entram. Atendimento com mais de um profissional aparece para cada um (selo “compartilhado”). Clique num profissional para ver o detalhe; o pagamento da comissão é registrado como uma despesa no Financeiro.</p>
+  <p class="hint">Mostra os serviços <b>já pagos</b> no mês, pelo <b>valor recebido</b>, e a comissão pelo <b>% de cada serviço</b> (definido no cadastro de Serviços). Produtos não entram. Atendimento com mais de um profissional aparece para cada um (selo “compartilhado”) e a comissão é dividida entre eles. Clique num profissional para ver o detalhe; o pagamento da comissão é registrado como uma despesa no Financeiro.</p>
 {% endif %}
 
 {# ---------- modal de detalhe (carregado via HTMX) ---------- #}

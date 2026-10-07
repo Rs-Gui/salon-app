@@ -8,6 +8,8 @@ class Servico(SQLModel, table=True):
     nome: str = Field(index=True)
     preco: float = Field(default=0.0)
     duracao_minutos: int = Field(default=30)
+    # % do valor recebido que vai para o(s) profissional(is) do atendimento.
+    comissao_pct: float = Field(default=0.0)
     ativo: bool = Field(default=True)
     observacoes: str | None = None
     criado_em: datetime = Field(default_factory=datetime.now)

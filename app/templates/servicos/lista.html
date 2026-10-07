@@ -40,6 +40,7 @@
           <th>Serviço</th>
           <th>Preço</th>
           <th class="hide-sm">Duração</th>
+          <th class="hide-sm">Comissão</th>
           <th>Status</th>
           <th class="right">Ações</th>
         </tr>
@@ -57,6 +58,7 @@
           </td>
           <td><span class="price">R$ {{ "%.2f"|format(s.preco or 0)|replace(".", ",") }}</span></td>
           <td class="hide-sm"><span class="dur">{{ s.duracao_minutos }} min</span></td>
+          <td class="hide-sm"><span class="dur">{{ ("%g"|format(s.comissao_pct or 0))|replace(".", ",") }}%</span></td>
           <td>
             {% if s.ativo %}
               <span class="status"><span class="pt"></span> Ativo</span>
@@ -83,7 +85,7 @@
         </tr>
         {% endfor %}
         <tr id="serv-sem-resultados" style="display:none">
-          <td colspan="5" class="muted-cell" style="text-align:center;padding:32px">
+          <td colspan="6" class="muted-cell" style="text-align:center;padding:32px">
             Nenhum serviço encontrado para esse filtro.
           </td>
         </tr>

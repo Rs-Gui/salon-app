@@ -27,7 +27,7 @@ router = APIRouter(prefix="/agendamentos", dependencies=[Depends(requer_login)])
 
 _HORA_MIN = 6
 _HORA_MAX = 22
-_DURACAO_MAX = 300
+_DURACAO_MAX = 480
 
 
 # ---------------------------------------------------------------------------
@@ -247,12 +247,48 @@ def _conflita_para_profissional(
     for cand in candidatos:
         if ignorar_agendamento_id is not None and cand.id == ignorar_agendamento_id:
             continue
+        if cand.encaixe:
+            continue
         servs = _calcula_servicos(session, cand.id)
         dur = _duracao_efetiva(cand, servs)
         fim_cand = cand.data_hora + timedelta(minutes=dur)
         if cand.data_hora < fim and fim_cand > inicio:
             return cand
     return None
+
+
+def _distribui_faixas(blocos: list) -> list:
+    """Encaixes: blocos que se sobrepõem na mesma coluna ficam lado a lado.
+    Devolve cópias com lane (0..) e lanes (nº de faixas do grupo sobreposto)."""
+    ordenados = sorted(blocos, key=lambda b: (b["top_px"], -b["duracao_efetiva"]))
+    saida, grupo, fim_grupo = [], [], None
+
+    def fecha(grupo):
+        fins = []  # fim de cada faixa já ocupada
+        for b in grupo:
+            for i, fim in enumerate(fins):
+                if b["top_px"] >= fim:
+                    fins[i] = b["top_px"] + b["duracao_efetiva"]
+                    b["lane"] = i
+                    break
+            else:
+                fins.append(b["top_px"] + b["duracao_efetiva"])
+                b["lane"] = len(fins) - 1
+        for b in grupo:
+            b["lanes"] = len(fins)
+        saida.extend(grupo)
+
+    for b in ordenados:
+        b = dict(b)
+        if grupo and b["top_px"] >= fim_grupo:
+            fecha(grupo)
+            grupo = []
+        grupo.append(b)
+        fim = b["top_px"] + b["duracao_efetiva"]
+        fim_grupo = fim if len(grupo) == 1 else max(fim_grupo, fim)
+    if grupo:
+        fecha(grupo)
+    return saida
 
 
 def _ordena_por_nome(itens):
@@ -437,6 +473,7 @@ def _validar_agendamento(
     duracao_override: Optional[int],
     modo: str,  # "criar" | "atualizar" | "horario" | "duracao"
     ag_atual: Optional[Agendamento] = None,
+    encaixe: bool = False,
 ) -> tuple[Optional[str], Optional[datetime], Optional[int]]:
     """Retorna (erro, fim, duracao_efetiva).
 
@@ -480,7 +517,7 @@ def _validar_agendamento(
     if dur < 15:
         return "A duração mínima é de 15 minutos.", None, None
     if dur > _DURACAO_MAX:
-        return "A duração total não pode passar de 300 minutos (5h).", None, None
+        return "A duração total não pode passar de 480 minutos (8h).", None, None
 
     fim = data_hora + timedelta(minutes=dur)
     limite = data_hora.replace(hour=_HORA_MAX, minute=0, second=0, microsecond=0)
@@ -490,9 +527,9 @@ def _validar_agendamento(
             "expediente (22:00). Reduza a duração ou escolha um horário mais cedo."
         ), None, None
 
-    # Conflito por profissional
+    # Conflito por profissional (encaixe sobrepõe de propósito: não checa)
     ignorar_id = ag_atual.id if ag_atual is not None else None
-    for pid in profissional_ids:
+    for pid in ([] if encaixe else profissional_ids):
         conflito = _conflita_para_profissional(
             session, pid, data_hora, fim, ignorar_agendamento_id=ignorar_id
         )
@@ -600,10 +637,15 @@ def lista(
             "height_px": max(dur - 2, 1),
             "duracao_efetiva": dur,
             "tem_inativo": tem_inativo,
+            "encaixe": ag.encaixe,
         }
         for p in profs:
             if p.id in blocos_por_profissional:
                 blocos_por_profissional[p.id].append(bloco)
+
+    blocos_por_profissional = {
+        pid: _distribui_faixas(blocos) for pid, blocos in blocos_por_profissional.items()
+    }
 
     data_anterior = (dia - timedelta(days=1)).strftime("%Y-%m-%d")
     data_proxima = (dia + timedelta(days=1)).strftime("%Y-%m-%d")
@@ -794,6 +836,7 @@ def criar(
     observacoes: str = Form(""),
     profissional_ids: List[str] = Form(default=[]),
     servico_ids: List[str] = Form(default=[]),
+    encaixe: str = Form(""),
     session: Session = Depends(get_session),
 ):
     prof_ids = _parse_ids_lista(profissional_ids)
@@ -804,6 +847,7 @@ def criar(
     obs = _vazio_para_none(observacoes)
     if obs is not None and len(obs) > 2000:
         obs = obs[:2000]
+    eh_encaixe = bool(encaixe)
 
     erro, _fim, _dur = _validar_agendamento(
         session,
@@ -812,6 +856,7 @@ def criar(
         data_hora=data_hora,
         duracao_override=dur_override,
         modo="criar",
+        encaixe=eh_encaixe,
     )
 
     if erro:
@@ -820,6 +865,7 @@ def criar(
             cliente_id=cli_id,
             duracao_override=dur_override,
             observacoes=obs,
+            encaixe=eh_encaixe,
         )
         agendamento_mem.id = None
         contexto = _contexto_form(
@@ -848,6 +894,7 @@ def criar(
         cliente_id=cli_id,
         duracao_override=dur_override,
         observacoes=obs,
+        encaixe=eh_encaixe,
     )
     session.add(ag)
     session.flush()  # garante ag.id
@@ -867,6 +914,7 @@ def atualizar(
     observacoes: str = Form(""),
     profissional_ids: List[str] = Form(default=[]),
     servico_ids: List[str] = Form(default=[]),
+    encaixe: str = Form(""),
     session: Session = Depends(get_session),
 ):
     ag = session.get(Agendamento, agendamento_id)
@@ -881,6 +929,7 @@ def atualizar(
     obs = _vazio_para_none(observacoes)
     if obs is not None and len(obs) > 2000:
         obs = obs[:2000]
+    eh_encaixe = bool(encaixe)
 
     erro, _fim, _dur = _validar_agendamento(
         session,
@@ -890,6 +939,7 @@ def atualizar(
         duracao_override=dur_override,
         modo="atualizar",
         ag_atual=ag,
+        encaixe=eh_encaixe,
     )
 
     if erro:
@@ -898,6 +948,7 @@ def atualizar(
             cliente_id=cli_id,
             duracao_override=dur_override,
             observacoes=obs,
+            encaixe=eh_encaixe,
         )
         agendamento_mem.id = ag.id
         contexto = _contexto_form(
@@ -925,6 +976,7 @@ def atualizar(
     ag.cliente_id = cli_id
     ag.duracao_override = dur_override
     ag.observacoes = obs
+    ag.encaixe = eh_encaixe
     session.add(ag)
     _substitui_links(session, ag.id, prof_ids, serv_ids)
     session.commit()
@@ -956,6 +1008,7 @@ def atualizar_horario(
         duracao_override=ag.duracao_override,
         modo="horario",
         ag_atual=ag,
+        encaixe=ag.encaixe,
     )
 
     if erro:
@@ -998,6 +1051,7 @@ def atualizar_duracao(
         duracao_override=dur_override,
         modo="duracao",
         ag_atual=ag,
+        encaixe=ag.encaixe,
     )
 
     if erro:
@@ -1259,7 +1313,8 @@ def pagamento(
     servs = _calcula_servicos(session, ag.id)
     preco_serv = {s.id: round(s.preco or 0.0, 2) for s in servs}
     nome_serv = {s.id: s.nome for s in servs}
-    serv_linhas = []  # (bruto, tipo, desc, net, nome)
+    pct_serv = {s.id: s.comissao_pct or 0.0 for s in servs}
+    serv_linhas = []  # (bruto, tipo, desc, net, nome, comissao_pct)
     for sid_raw, t_raw, v_raw in zip(servico_id, servico_desc_tipo, servico_desc_valor):
         try:
             sid = int(str(sid_raw).strip())
@@ -1271,7 +1326,9 @@ def pagamento(
         if bruto <= 0:
             continue  # serviço sem preço não gera lançamento
         tipo, desc, net = _calc_desconto(bruto, t_raw, v_raw)
-        serv_linhas.append((bruto, tipo, desc, net, nome_serv.get(sid, "Serviço")))
+        serv_linhas.append(
+            (bruto, tipo, desc, net, nome_serv.get(sid, "Serviço"), pct_serv[sid])
+        )
 
     # --- Produtos vendidos + desconto por item (valida estoque antes de gravar) ---
     pares = zip(produto_id, quantidade, produto_desc_tipo, produto_desc_valor)
@@ -1317,7 +1374,7 @@ def pagamento(
     # 1) Uma receita de Serviços POR serviço (guarda bruto/desconto/líquido).
     if serv_linhas:
         cat_serv = _categoria_receita(session, "Serviços")
-        for bruto, tipo, desc, net, nome in serv_linhas:
+        for bruto, tipo, desc, net, nome, pct in serv_linhas:
             session.add(
                 LancamentoFinanceiro(
                     tipo="receita",
@@ -1328,6 +1385,7 @@ def pagamento(
                     data=data_val,
                     categoria_id=cat_serv.id,
                     descricao=nome[:200],
+                    comissao_pct=pct,
                     agendamento_id=ag.id,
                     usuario_id=usuario.id,
                     usuario_nome=usuario_nome,

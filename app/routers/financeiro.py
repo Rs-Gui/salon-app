@@ -9,6 +9,7 @@ from app.models.agendamento import Agendamento
 from app.models.categoria_financeira import CategoriaFinanceira
 from app.models.lancamento_financeiro import LancamentoFinanceiro
 from app.models.profissional import Profissional
+from app.models.servico import Servico
 from app.models.usuario import Usuario
 from app.routers.agendamentos import (
     _calcula_cliente,
@@ -330,11 +331,12 @@ def comanda_estornar(
 # ---------------------------------------------------------------------------
 #
 # Relatório SÓ-LEITURA: por profissional, os serviços JÁ PAGOS no mês, pelo
-# valor LÍQUIDO recebido. Produtos NÃO entram. Atendimento com mais de um
-# profissional credita o serviço a CADA um (marcado "compartilhado"). Pagar a
-# comissão = lançar uma despesa no Financeiro (botão "Lançar pagamento" no modal,
-# que abre /financeiro/novo já com descrição e valor). Sem cálculo de % e sem
-# alteração de banco — só lê o que já existe.
+# valor LÍQUIDO recebido. Produtos NÃO entram. Comissão = valor × % do serviço
+# (snapshot gravado no pagamento; lançamentos antigos usam o % atual do serviço
+# de mesmo nome). Atendimento com mais de um profissional aparece para cada um
+# (marcado "compartilhado") e a comissão é DIVIDIDA igualmente entre eles. Pagar
+# a comissão = lançar uma despesa no Financeiro (botão "Lançar pagamento" no
+# modal, que abre /financeiro/novo já com descrição e valor da comissão).
 
 
 def _comissoes_do_mes(session: Session, primeiro: date, proximo: date) -> list:
@@ -347,6 +349,7 @@ def _comissoes_do_mes(session: Session, primeiro: date, proximo: date) -> list:
         .order_by(LancamentoFinanceiro.data, LancamentoFinanceiro.id)
     ).all()
     cats = _mapa_categorias(session)
+    pct_por_nome = {s.nome: s.comissao_pct or 0.0 for s in session.exec(select(Servico)).all()}
     ag_cache: dict = {}      # agendamento_id -> (profissionais, cliente)
     por_prof: dict = {}      # profissional_id -> dados agregados
     for l in lancs:
@@ -362,18 +365,24 @@ def _comissoes_do_mes(session: Session, primeiro: date, proximo: date) -> list:
             ag_cache[ag_id] = (profs, cliente)
         profs, cliente = ag_cache[ag_id]
         shared = len(profs) > 1
+        pct = l.comissao_pct if l.comissao_pct is not None else pct_por_nome.get(l.descricao, 0.0)
+        comissao = round(l.valor * pct / 100 / max(len(profs), 1), 2)
         for p in profs:
             d = por_prof.setdefault(p.id, {
                 "id": p.id, "nome": p.nome, "ativo": p.ativo,
-                "total": 0.0, "servicos": [],
+                "total": 0.0, "comissao": 0.0, "servicos": [],
             })
             d["total"] += l.valor
+            d["comissao"] += comissao
             d["servicos"].append({
                 "data_fmt": l.data.strftime("%d/%m"),
                 "servico": l.descricao or "Serviço",
                 "cliente": cliente.nome if cliente is not None else "Sem cliente",
                 "valor": l.valor,
+                "pct": pct,
+                "comissao": comissao,
                 "shared": shared,
+                "n_profs": len(profs),
                 "com": ", ".join(x.nome for x in profs if x.id != p.id),
             })
     return sorted(
@@ -399,6 +408,7 @@ def comissoes(
             "comissoes": lista,
             "n_prof": len(lista),
             "total_geral": sum(d["total"] for d in lista),
+            "comissao_geral": sum(d["comissao"] for d in lista),
             "mes_str": primeiro.strftime("%Y-%m"),
             "mes_label": _rotulo_mes(primeiro),
             "mes_anterior": _mes_anterior(primeiro).strftime("%Y-%m"),
@@ -424,6 +434,7 @@ def comissao_detalhe(
             "id": profissional_id,
             "nome": prof.nome if prof is not None else "—",
             "total": 0.0,
+            "comissao": 0.0,
             "servicos": [],
         }
     return templates.TemplateResponse(
