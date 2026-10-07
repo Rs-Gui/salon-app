@@ -570,6 +570,8 @@ body.bruma{
 .bruma .topbar-logout{margin:0}
 .bruma .iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--ink-soft);cursor:pointer;padding:0}
 .bruma .iconbtn:hover{background:var(--surface-2);color:var(--ink)}
+.bruma .iconbtn.girando svg{animation:girar .8s linear infinite}
+@keyframes girar{to{transform:rotate(360deg)}}
 
 @media (max-width:760px){
   /* topbar enxuto: marca + sair (a data fica na barra da agenda) */
