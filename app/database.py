@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from sqlalchemy import text
@@ -5,13 +6,32 @@ from sqlmodel import Session, SQLModel, create_engine
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = ROOT_DIR / "salao.db"
-DATABASE_URL = f"sqlite:///{DB_PATH}"
 
-engine = create_engine(
-    DATABASE_URL,
-    echo=False,
-    connect_args={"check_same_thread": False},
-)
+
+def _database_url() -> str:
+    """SQLite local por padrão; Postgres quando DATABASE_URL/POSTGRES_URL existir
+    (deploy na Vercel com Neon)."""
+    url = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
+    if not url:
+        return f"sqlite:///{DB_PATH}"
+    for prefixo in ("postgres://", "postgresql://"):
+        if url.startswith(prefixo):
+            return "postgresql+psycopg://" + url[len(prefixo):]
+    return url
+
+
+DATABASE_URL = _database_url()
+IS_SQLITE = DATABASE_URL.startswith("sqlite")
+
+if IS_SQLITE:
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        connect_args={"check_same_thread": False},
+    )
+else:
+    # Serverless: conexões ociosas são derrubadas pelo Neon; pre_ping evita erro.
+    engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True, pool_size=2)
 
 
 def init_db() -> None:
@@ -26,8 +46,19 @@ def init_db() -> None:
     from app.models import servico  # noqa: F401
     from app.models import usuario  # noqa: F401
 
+    if not IS_SQLITE:
+        # O SQLite nunca aplicou as FKs (sem PRAGMA foreign_keys) e os fluxos de
+        # exclusão contam com isso; no Postgres as FKs não são criadas para manter
+        # o mesmo comportamento.
+        for tabela in SQLModel.metadata.tables.values():
+            for fk in tabela.foreign_key_constraints:
+                fk.ddl_if(dialect="sqlite")
+
     SQLModel.metadata.create_all(engine)
-    _migrar_schema()
+    if IS_SQLITE:
+        # Migrações manuais só existem para bancos SQLite antigos; no Postgres o
+        # create_all já cria o schema completo.
+        _migrar_schema()
     _seed_categorias_financeiras()
 
 

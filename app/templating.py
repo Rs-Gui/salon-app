@@ -5,7 +5,21 @@ from fastapi.templating import Jinja2Templates
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+class _Templates(Jinja2Templates):
+    """Aceita a assinatura antiga TemplateResponse(name, {"request": ...}),
+    removida no Starlette 1.x, usada em todos os routers."""
+
+    def TemplateResponse(self, *args, **kwargs):
+        if args and isinstance(args[0], str):
+            name, *resto = args
+            context = resto[0] if resto else kwargs.pop("context", {})
+            return super().TemplateResponse(
+                context["request"], name, context, *resto[1:], **kwargs
+            )
+        return super().TemplateResponse(*args, **kwargs)
+
+
+templates = _Templates(directory=str(TEMPLATES_DIR))
 
 
 def asset_version(nome: str) -> str:
