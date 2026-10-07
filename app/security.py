@@ -1,3 +1,4 @@
+import hashlib
 import os
 import secrets
 import time
@@ -23,6 +24,11 @@ def _carregar_secret_key() -> str:
     env_key = os.environ.get("SALAO_SECRET_KEY")
     if env_key:
         return env_key
+    # Na Vercel não há disco gravável: deriva a chave da URL do banco (segredo
+    # injetado pela integração do Neon, fora do repositório).
+    db_url = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
+    if db_url:
+        return hashlib.sha256(b"salao-session-key:" + db_url.encode()).hexdigest()
     if SECRET_KEY_FILE.exists():
         return SECRET_KEY_FILE.read_text(encoding="utf-8").strip()
     chave = secrets.token_urlsafe(64)
@@ -56,7 +62,8 @@ SETUP_TOKEN = os.environ.get("SALAO_SETUP_TOKEN") or None
 
 def setup_token_valido(token: str | None) -> bool:
     if SETUP_TOKEN is None:
-        return True
+        # Local: setup livre. Em produção sem token configurado: fechado.
+        return not EM_PRODUCAO
     return secrets.compare_digest((token or "").encode(), SETUP_TOKEN.encode())
 
 
