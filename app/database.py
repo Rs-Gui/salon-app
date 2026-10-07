@@ -31,7 +31,15 @@ if IS_SQLITE:
     )
 else:
     # Serverless: conexões ociosas são derrubadas pelo Neon; pre_ping evita erro.
-    engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True, pool_size=2)
+    # prepare_threshold=None: o DATABASE_URL do Neon passa pelo PgBouncer (pooler),
+    # onde prepared statements do lado do servidor não são confiáveis.
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        pool_pre_ping=True,
+        pool_size=2,
+        connect_args={"prepare_threshold": None},
+    )
 
 
 def init_db() -> None:
