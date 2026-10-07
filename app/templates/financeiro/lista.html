@@ -91,8 +91,8 @@
             hx-get="/financeiro/{{ l.id }}/detalhe"
             hx-target="#fin-modal-content" hx-swap="innerHTML"
             onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
-          <td class="date-cell">{{ l.data_fmt }}</td>
-          <td>
+          <td class="date-cell c-meta">{{ l.data_fmt }}</td>
+          <td class="c-titulo">
             <span class="desc">{{ l.descricao }}
               {% if l.do_agendamento or l.usuario %}
               <span class="from">
@@ -102,22 +102,22 @@
               {% endif %}
             </span>
           </td>
-          <td class="hide-sm">{{ l.categoria }}</td>
-          <td>
+          <td class="hide-sm c-chip" data-label="Categoria">{{ l.categoria }}</td>
+          <td class="c-ocultar">
             {% if l.tipo == 'receita' %}
               <span class="badge-fin receita"><span class="pt"></span> Receita</span>
             {% else %}
               <span class="badge-fin despesa"><span class="pt"></span> Despesa</span>
             {% endif %}
           </td>
-          <td class="right">
+          <td class="right c-valor">
             {% if l.tipo == 'receita' %}
               <span class="amount in">+ R$ {{ l.valor|brl }}</span>
             {% else %}
               <span class="amount out">− R$ {{ l.valor|brl }}</span>
             {% endif %}
           </td>
-          <td class="right"><span class="see">Ver ›</span></td>
+          <td class="right c-ocultar"><span class="see">Ver ›</span></td>
         </tr>
         {% endfor %}
         <tr id="fin-sem-resultados" style="display:none">

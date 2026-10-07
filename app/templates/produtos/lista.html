@@ -50,14 +50,15 @@
         {% for p in produtos %}
         <tr class="{% if not p.ativo %}inactive{% endif %}"
             data-ativo="{{ '1' if p.ativo else '0' }}"
+            data-href="/produtos/{{ p.id }}/editar"
             data-busca="{{ p.nome | lower }}"
             {% if not p.ativo %}style="display:none"{% endif %}>
-          <td>
+          <td class="c-titulo">
             <div class="who">
               <span class="nm">{{ p.nome }}</span>
             </div>
           </td>
-          <td>
+          <td class="c-valor">
             <span class="stock"><span class="qty">{{ p.estoque_atual }}</span><span class="un">{{ p.unidade }}</span></span>
             {% if p.estoque_atual == 0 %}
               <span class="pill out">Sem estoque</span>
@@ -65,15 +66,15 @@
               <span class="pill low">Estoque baixo</span>
             {% endif %}
           </td>
-          <td class="hide-sm"><span class="price">R$ {{ "%.2f"|format(p.preco_venda or 0)|replace(".", ",") }}</span></td>
-          <td>
+          <td class="hide-sm c-chip" data-label="Preço"><span class="price">R$ {{ "%.2f"|format(p.preco_venda or 0)|replace(".", ",") }}</span></td>
+          <td data-label="Status"{% if p.ativo %} class="c-vazio"{% endif %}>
             {% if p.ativo %}
               <span class="status"><span class="pt"></span> Ativo</span>
             {% else %}
               <span class="status off"><span class="pt"></span> Inativo</span>
             {% endif %}
           </td>
-          <td>
+          <td class="c-acoes">
             <div class="acts">
               {% if p.ativo %}
                 <button type="button" class="add"
@@ -86,8 +87,8 @@
                         onclick="window.dispatchEvent(new CustomEvent('open-modal'))">− Retirar</button>
                 <span class="sep">|</span>
                 <a class="hist" href="/produtos/{{ p.id }}/movimentacoes">Histórico</a>
-                <a class="edit" href="/produtos/{{ p.id }}/editar">Editar</a>
-                <form method="post" action="/produtos/{{ p.id }}/desativar"
+                <a class="edit so-desk" href="/produtos/{{ p.id }}/editar">Editar</a>
+                <form class="so-desk" method="post" action="/produtos/{{ p.id }}/desativar"
                       onsubmit="return confirm('Desativar este produto?')">
                   <button type="submit" class="danger">Desativar</button>
                 </form>

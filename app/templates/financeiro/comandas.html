@@ -69,20 +69,20 @@
             hx-get="/financeiro/comandas/{{ c.agendamento_id }}"
             hx-target="#fin-modal-content" hx-swap="innerHTML"
             onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
-          <td class="date-cell">{{ c.data_fmt }}</td>
-          <td>
+          <td class="date-cell c-meta">{{ c.data_fmt }}</td>
+          <td class="c-titulo">
             <span class="desc">{{ c.cliente }}
               {% if c.profissionais %}<span class="sub">com {{ c.profissionais | join(', ') }}</span>{% endif %}
             </span>
           </td>
-          <td class="hide-sm">
+          <td class="hide-sm c-chip" data-label="Itens">
             <span class="fin-chips">{% if c.n_serv %}{{ c.n_serv }} serviço{{ 's' if c.n_serv > 1 }}{% endif %}{% if c.n_serv and c.n_prod %} · {% endif %}{% if c.n_prod %}{{ c.n_prod }} produto{{ 's' if c.n_prod > 1 }}{% endif %}</span>
           </td>
-          <td class="hide-sm">
+          <td class="hide-sm c-chip{% if not c.desconto > 0 %} c-vazio{% endif %}" data-label="Desconto">
             {% if c.desconto > 0 %}<span class="disc-badge">− R$ {{ c.desconto|brl }}</span>{% else %}<span class="no-disc">—</span>{% endif %}
           </td>
-          <td class="right"><span class="amount in">R$ {{ c.total|brl }}</span></td>
-          <td class="right"><span class="see">Ver ›</span></td>
+          <td class="right c-valor"><span class="amount in">R$ {{ c.total|brl }}</span></td>
+          <td class="right c-ocultar"><span class="see">Ver ›</span></td>
         </tr>
         {% endfor %}
         <tr id="cmd-sem-resultados" style="display:none">

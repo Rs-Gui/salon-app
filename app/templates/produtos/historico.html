@@ -39,8 +39,8 @@
       <tbody>
         {% for m in movimentacoes %}
         <tr>
-          <td class="when">{{ m.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>
-          <td>
+          <td class="when c-meta">{{ m.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td class="c-titulo">
             {% if m.tipo == 'entrada' %}
               <span class="tipo-pill in"><span class="pt"></span> Entrada</span>
             {% elif m.tipo == 'saida_venda' %}
@@ -49,10 +49,10 @@
               <span class="tipo-pill saida"><span class="pt"></span> Saída</span>
             {% endif %}
           </td>
-          <td class="right">
+          <td class="right c-valor">
             <span class="amt {{ 'in' if m.tipo == 'entrada' else 'out' }}">{{ '+' if m.tipo == 'entrada' else '−' }}{{ m.quantidade }}<span class="un">{{ produto.unidade }}</span></span>
           </td>
-          <td class="hide-sm obs">{{ m.observacoes or '—' }}</td>
+          <td class="hide-sm obs{% if not m.observacoes %} c-vazio{% endif %}" data-label="Obs.">{{ m.observacoes or '—' }}</td>
         </tr>
         {% endfor %}
       </tbody>

@@ -48,23 +48,24 @@
         {% for c in clientes %}
         <tr class="{% if not c.ativo %}inactive{% endif %}"
             data-ativo="{{ '1' if c.ativo else '0' }}"
+            data-href="/clientes/{{ c.id }}/editar"
             data-busca="{{ (c.nome ~ ' ' ~ (c.telefone or '') ~ ' ' ~ (c.email or '')) | lower }}"
             {% if not c.ativo %}style="display:none"{% endif %}>
-          <td>
+          <td class="c-titulo">
             <div class="who">
               <span class="nm">{{ c.nome }}</span>
             </div>
           </td>
-          <td class="hide-sm {% if not c.telefone %}muted-cell{% endif %}">{{ c.telefone or '—' }}</td>
-          <td class="hide-sm {% if not c.email %}muted-cell{% endif %}">{{ c.email or '—' }}</td>
-          <td>
+          <td class="hide-sm {% if not c.telefone %}muted-cell c-vazio{% endif %}" data-label="Telefone">{% if c.telefone %}<a class="tel" href="tel:{{ c.telefone }}">{{ c.telefone }}</a>{% else %}—{% endif %}</td>
+          <td class="hide-sm {% if not c.email %}muted-cell c-vazio{% endif %}" data-label="Email">{{ c.email or '—' }}</td>
+          <td class="c-valor{% if c.ativo %} c-vazio{% endif %}">
             {% if c.ativo %}
               <span class="status"><span class="pt"></span> Ativo</span>
             {% else %}
               <span class="status off"><span class="pt"></span> Inativo</span>
             {% endif %}
           </td>
-          <td>
+          <td class="c-acoes so-desk">
             <div class="acts">
               <a class="edit" href="/clientes/{{ c.id }}/editar">Editar</a>
               <span class="sep">|</span>

@@ -30,12 +30,12 @@
             hx-get="/agendamentos/{{ l.id }}/pagamento"
             hx-target="#modal-content" hx-swap="innerHTML"
             onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
-          <td class="date-cell">{{ l.data_fmt }} · {{ l.hora }}</td>
-          <td><span class="desc">{{ l.cliente or 'Sem cliente' }}</span></td>
-          <td class="hide-sm">{{ l.profissionais }}{% if l.tem_inativo %} <span class="from">(inclui inativo)</span>{% endif %}</td>
-          <td class="hide-sm"><span class="muted-cell">{{ l.servicos }}</span></td>
-          <td class="right"><span class="price">R$ {{ l.valor|brl }}</span></td>
-          <td class="right"><span class="see">Pagar ›</span></td>
+          <td class="date-cell c-meta">{{ l.data_fmt }} · {{ l.hora }}</td>
+          <td class="c-titulo"><span class="desc">{{ l.cliente or 'Sem cliente' }}</span></td>
+          <td class="hide-sm" data-label="Profissional">{{ l.profissionais }}{% if l.tem_inativo %} <span class="from">(inclui inativo)</span>{% endif %}</td>
+          <td class="hide-sm" data-label="Serviços"><span class="muted-cell">{{ l.servicos }}</span></td>
+          <td class="right c-valor"><span class="price">R$ {{ l.valor|brl }}</span></td>
+          <td class="right c-ocultar"><span class="see">Pagar ›</span></td>
         </tr>
         {% endfor %}
       </tbody>

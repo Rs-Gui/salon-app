@@ -48,11 +48,11 @@
             hx-get="/financeiro/comissoes/{{ c.id }}?mes={{ mes_str }}"
             hx-target="#fin-modal-content" hx-swap="innerHTML"
             onclick="window.dispatchEvent(new CustomEvent('open-modal'))">
-          <td><span class="desc">{{ c.nome }}{% if not c.ativo %} <span class="from">inativo</span>{% endif %}</span></td>
-          <td><span class="muted-cell">{{ c.servicos | length }} serviço{{ 's' if c.servicos | length != 1 }}</span></td>
-          <td class="right"><span class="muted-cell">R$ {{ c.total|brl }}</span></td>
-          <td class="right"><span class="amount in">R$ {{ c.comissao|brl }}</span></td>
-          <td class="right"><span class="see">Ver ›</span></td>
+          <td class="c-titulo"><span class="desc">{{ c.nome }}{% if not c.ativo %} <span class="from">inativo</span>{% endif %}</span></td>
+          <td class="c-meta"><span class="muted-cell">{{ c.servicos | length }} serviço{{ 's' if c.servicos | length != 1 }}</span></td>
+          <td class="right" data-label="Serviços pagos"><span class="muted-cell">R$ {{ c.total|brl }}</span></td>
+          <td class="right c-valor"><span class="amount in">R$ {{ c.comissao|brl }}</span></td>
+          <td class="right c-ocultar"><span class="see">Ver ›</span></td>
         </tr>
         {% endfor %}
         <tr id="com-sem-resultados" style="display:none">

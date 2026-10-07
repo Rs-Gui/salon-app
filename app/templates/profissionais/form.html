@@ -39,7 +39,7 @@
 
       <div class="field">
         <label class="lbl" for="telefone">Telefone</label>
-        <input class="control" id="telefone" type="text" name="telefone"
+        <input class="control" id="telefone" type="text" inputmode="tel" autocomplete="tel" name="telefone"
                maxlength="15" pattern="\d{8,15}" inputmode="numeric"
                placeholder="11999998888" value="{{ profissional.telefone or '' }}" />
         <p class="help">Apenas dígitos (8 a 15).</p>
@@ -47,7 +47,7 @@
 
       <div class="field">
         <label class="lbl" for="email">E-mail</label>
-        <input class="control" id="email" type="text" name="email" maxlength="200"
+        <input class="control" id="email" type="text" inputmode="email" autocapitalize="none" autocorrect="off" name="email" maxlength="200"
                pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
                placeholder="exemplo@dominio.com" value="{{ profissional.email or '' }}" />
       </div>

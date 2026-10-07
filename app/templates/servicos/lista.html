@@ -49,24 +49,25 @@
         {% for s in servicos %}
         <tr class="{% if not s.ativo %}inactive{% endif %}"
             data-ativo="{{ '1' if s.ativo else '0' }}"
+            data-href="/servicos/{{ s.id }}/editar"
             data-busca="{{ s.nome | lower }}"
             {% if not s.ativo %}style="display:none"{% endif %}>
-          <td>
+          <td class="c-titulo">
             <div class="who">
               <span class="nm">{{ s.nome }}</span>
             </div>
           </td>
-          <td><span class="price">R$ {{ "%.2f"|format(s.preco or 0)|replace(".", ",") }}</span></td>
-          <td class="hide-sm"><span class="dur">{{ s.duracao_minutos }} min</span></td>
-          <td class="hide-sm"><span class="dur">{{ ("%g"|format(s.comissao_pct or 0))|replace(".", ",") }}%</span></td>
-          <td>
+          <td class="c-valor"><span class="price">R$ {{ "%.2f"|format(s.preco or 0)|replace(".", ",") }}</span></td>
+          <td class="hide-sm c-chip" data-label="Duração"><span class="dur">{{ s.duracao_minutos }} min</span></td>
+          <td class="hide-sm c-chip" data-label="Comissão"><span class="dur">{{ ("%g"|format(s.comissao_pct or 0))|replace(".", ",") }}%</span></td>
+          <td data-label="Status"{% if s.ativo %} class="c-vazio"{% endif %}>
             {% if s.ativo %}
               <span class="status"><span class="pt"></span> Ativo</span>
             {% else %}
               <span class="status off"><span class="pt"></span> Inativo</span>
             {% endif %}
           </td>
-          <td>
+          <td class="c-acoes so-desk">
             <div class="acts">
               <a class="edit" href="/servicos/{{ s.id }}/editar">Editar</a>
               <span class="sep">{{ '|' if s.ativo else '·' }}</span>
