@@ -9,6 +9,7 @@ from app.models.usuario import Usuario
 from app.security import (
     PAPEIS_ATRIBUIVEIS,
     hash_senha,
+    impressao_senha,
     normalizar_nome_usuario,
     obter_usuario_por_nome,
     pode_alterar_papel,
@@ -101,6 +102,7 @@ def criar(
 
 @router.post("/{usuario_id}/senha")
 def redefinir_senha(
+    request: Request,
     usuario_id: int,
     senha: str = Form(...),
     ator: Usuario = Depends(requer_admin),
@@ -117,6 +119,9 @@ def redefinir_senha(
     alvo.senha_hash = hash_senha(senha)
     session.add(alvo)
     session.commit()
+    # A troca derruba as sessões do alvo; quem trocou a própria senha continua logado.
+    if alvo.id == ator.id:
+        request.session["senha_fp"] = impressao_senha(alvo.senha_hash)
     return _redirect(msg=f"Senha de '{alvo.nome_usuario}' redefinida.")
 
 

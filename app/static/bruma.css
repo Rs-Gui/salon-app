@@ -561,6 +561,7 @@ body.bruma{
    =========================================================== */
 .bruma .only-sm{display:none}
 .bruma .agenda-mobile{display:none}
+.bruma .u-mobile{display:none}
 /* display fica a cargo do .only-sm (none no desktop, inline-flex no mobile);
    aqui só o reset de margem do <form>. */
 .bruma .topbar-logout{margin:0}
@@ -635,6 +636,46 @@ body.bruma{
   .bruma .modal-card,.bruma .modal-card.wide{margin:0;width:100%;max-width:none;max-height:92vh;border-radius:24px 24px 0 0;animation:sheet-up .26s cubic-bezier(.32,.72,0,1)}
   .bruma #modal-content,.bruma #fin-modal-content{padding:22px 18px calc(22px + env(safe-area-inset-bottom))}
   @keyframes sheet-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+  /* usuários (gestão remota de acesso): cartões expansíveis */
+  .bruma main.content[data-active="usuarios"]{padding:18px 16px 32px}
+  .bruma .u-mobile{display:block}
+  .bruma .um-head{margin-bottom:16px}
+  .bruma .um-head h1{font-family:'Fraunces',serif;font-weight:500;font-size:28px;color:var(--ink);line-height:1.1}
+  .bruma .um-head p{margin-top:4px;font-size:13.5px;color:var(--ink-soft)}
+  .bruma .um-list{display:flex;flex-direction:column;gap:10px}
+  .bruma .um-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .bruma .um-card.off .um-row{opacity:.6}
+  .bruma .um-row{display:flex;align-items:center;gap:12px;width:100%;padding:14px;background:none;border:none;font:inherit;text-align:left;color:var(--ink);cursor:pointer}
+  .bruma .um-row:active{background:var(--surface-2)}
+  .bruma .um-avatar{flex-shrink:0;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--graphite);color:#fff;font-family:'Fraunces',serif;font-size:17px;font-weight:600}
+  .bruma .um-id{flex:1;min-width:0;display:flex;flex-direction:column}
+  .bruma .um-id b{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bruma .um-id small{font-size:12.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bruma .um-tags{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+  .bruma .um-off{font-size:11px;font-weight:600;color:var(--ink-soft)}
+  .bruma .um-chev{flex-shrink:0;color:var(--ink-soft);transition:transform .15s}
+  .bruma .um-chev.up{transform:rotate(180deg)}
+  .bruma .um-body{border-top:1px solid var(--line-soft);padding:4px 14px 14px}
+  .bruma .um-block{padding-top:14px}
+  .bruma .um-block + .um-block{border-top:1px dashed var(--line-soft);margin-top:14px}
+  .bruma .um-block .lbl{display:block;margin-bottom:6px}
+  .bruma .um-block .control{width:100%;font-size:16px}
+  .bruma .um-pass{position:relative}
+  .bruma .um-pass .control{padding-right:80px}
+  .bruma .um-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font:inherit;font-size:13px;font-weight:600;color:var(--accent-deep);padding:8px 10px;cursor:pointer}
+  .bruma .um-inline{display:flex;gap:8px}
+  .bruma .um-inline .control{flex:1}
+  .bruma .um-inline .btn-outline{padding:0 16px}
+  .bruma .um-full{width:100%;justify-content:center;margin:10px 0 0;min-height:46px;font-size:15px}
+  .bruma .um-block .help{margin-top:8px}
+  .bruma .um-new{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:0 14px}
+  .bruma .um-new summary{padding:15px 0;font-weight:600;font-size:15px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+  .bruma .um-new summary::-webkit-details-marker{display:none}
+  .bruma .um-new summary::before{content:"+";display:inline-grid;place-items:center;width:24px;height:24px;border-radius:8px;background:var(--surface-2);font-size:16px;color:var(--ink-soft)}
+  .bruma .um-new[open] summary::before{content:"−"}
+  .bruma .um-new form{padding-bottom:16px}
+  .bruma .um-new .control{width:100%;font-size:16px}
 
   /* login: respiro um pouco menor em tela estreita */
   .bruma .auth-card{padding:28px 22px}

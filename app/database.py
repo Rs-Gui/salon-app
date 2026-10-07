@@ -69,6 +69,28 @@ def init_db() -> None:
         # create_all já cria o schema completo.
         _migrar_schema()
     _seed_categorias_financeiras()
+    _garantir_superadmin()
+
+
+def _garantir_superadmin() -> None:
+    """O super admin é a conta criada na origem (setup). Contas criadas antes
+    disso viraram 'admin'; se não houver nenhum super admin, promove a mais antiga."""
+    try:
+        with engine.connect() as conn:
+            existe = conn.execute(
+                text("SELECT 1 FROM usuario WHERE papel = 'superadmin' LIMIT 1")
+            ).first()
+            if existe is None:
+                conn.execute(
+                    text(
+                        "UPDATE usuario SET papel = 'superadmin' "
+                        "WHERE id = (SELECT MIN(id) FROM usuario)"
+                    )
+                )
+                conn.commit()
+    except Exception:
+        # tabela ainda não criada ou erro benigno — próximo boot tenta de novo
+        pass
 
 
 def _migrar_schema() -> None:

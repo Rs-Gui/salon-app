@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 from starlette.middleware.sessions import SessionMiddleware
@@ -67,6 +68,37 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 @app.exception_handler(RedirectRequired)
 async def _redirect_required_handler(request: Request, exc: RedirectRequired):
     return montar_resposta_redirect(exc)
+
+
+# Manifest do app instalável — público (o navegador busca sem cookie de sessão).
+# No celular o app é só a agenda, então ele abre direto nela.
+_MANIFEST = {
+    "name": "SalãoApp",
+    "short_name": "SalãoApp",
+    "description": "Gestão do salão",
+    "lang": "pt-BR",
+    "start_url": "/agendamentos",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#F4F4F3",
+    "theme_color": "#F4F4F3",
+    "icons": [
+        {"src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+        {"src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+        {
+            "src": "/static/icons/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable",
+        },
+    ],
+}
+
+
+@app.get("/manifest.webmanifest", include_in_schema=False)
+def manifest():
+    return JSONResponse(_MANIFEST, media_type="application/manifest+json")
 
 
 # Routers públicos (sem requer_login)

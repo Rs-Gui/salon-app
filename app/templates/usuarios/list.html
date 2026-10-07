@@ -3,6 +3,8 @@
 {% set rotulos = {'superadmin': 'Super admin', 'admin': 'Admin', 'comum': 'Comum'} %}
 
 {% block content %}
+{# ---------- Desktop ---------- #}
+<div class="dk-only">
 <div class="page-head">
   <h1 class="page-title serif">Usuários</h1>
 </div>
@@ -108,4 +110,110 @@
     </tbody>
   </table>
 </div>
+</div>
+
+{# ---------- Celular (≤760px): gestão remota de acesso ----------
+   Mesmos endpoints do desktop; as regras de permissão abaixo espelham as da
+   tabela e continuam reforçadas no backend. #}
+<section class="u-mobile">
+  <div class="um-head">
+    <h1 class="serif">Usuários</h1>
+    <p>{{ usuarios|length }} {{ 'conta' if usuarios|length == 1 else 'contas' }} · toque para gerenciar</p>
+  </div>
+
+  {% if msg %}<div class="banner-ok">{{ msg }}</div>{% endif %}
+  {% if erro %}<div class="banner-erro">{{ erro }}</div>{% endif %}
+
+  <div class="um-list">
+    {% for u in usuarios %}
+    {% set eh_super = u.papel == 'superadmin' %}
+    {% set eh_self = u.id == ator.id %}
+    {% set pode_desativar = (not eh_super) and (not eh_self) and (u.papel != 'admin' or ator.papel == 'superadmin') %}
+    {% set pode_reset = eh_self or pode_desativar %}
+    {% set pode_papel = pode_alterar_papel and not eh_super %}
+    <article class="um-card {% if not u.ativo %}off{% endif %}" x-data="{ aberto: false, ver: false }">
+      <button type="button" class="um-row" @click="aberto = !aberto" :aria-expanded="aberto">
+        <span class="um-avatar">{{ (u.nome_exibicao or u.nome_usuario)[:1]|upper }}</span>
+        <span class="um-id">
+          <b>{{ u.nome_exibicao or u.nome_usuario }}</b>
+          <small>@{{ u.nome_usuario }}{% if eh_self %} · você{% endif %}</small>
+        </span>
+        <span class="um-tags">
+          <span class="role-badge">{{ rotulos.get(u.papel, u.papel) }}</span>
+          {% if not u.ativo %}<span class="um-off">Inativo</span>{% endif %}
+        </span>
+        <svg class="um-chev" :class="aberto && 'up'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+
+      <div class="um-body" x-show="aberto" x-cloak>
+        {% if pode_reset %}
+        <form method="post" action="/usuarios/{{ u.id }}/senha" class="um-block">
+          <label class="lbl" for="um-senha-{{ u.id }}">Nova senha</label>
+          <div class="um-pass">
+            <input class="control" id="um-senha-{{ u.id }}" name="senha" :type="ver ? 'text' : 'password'"
+                   required minlength="6" maxlength="200" autocomplete="new-password" placeholder="Mínimo 6 caracteres" />
+            <button type="button" class="um-eye" @click="ver = !ver" x-text="ver ? 'Ocultar' : 'Mostrar'"></button>
+          </div>
+          {% if not eh_self %}<p class="help">A pessoa é desconectada de todos os aparelhos e entra de novo com a senha nova.</p>{% endif %}
+          <button type="submit" class="btn-primary um-full">Salvar nova senha</button>
+        </form>
+        {% endif %}
+
+        {% if pode_papel %}
+        <form method="post" action="/usuarios/{{ u.id }}/papel" class="um-block">
+          <label class="lbl" for="um-papel-{{ u.id }}">Papel</label>
+          <div class="um-inline">
+            <select class="control" id="um-papel-{{ u.id }}" name="papel">
+              <option value="comum" {% if u.papel == 'comum' %}selected{% endif %}>Comum</option>
+              <option value="admin" {% if u.papel == 'admin' %}selected{% endif %}>Admin</option>
+            </select>
+            <button type="submit" class="btn-outline">Salvar</button>
+          </div>
+        </form>
+        {% endif %}
+
+        {% if pode_desativar %}
+        <form method="post" action="/usuarios/{{ u.id }}/ativo" class="um-block">
+          <button type="submit" class="btn-outline um-full {% if u.ativo %}danger{% endif %}">
+            {{ 'Desativar acesso' if u.ativo else 'Reativar acesso' }}
+          </button>
+        </form>
+        {% endif %}
+
+        {% if not pode_reset and not pode_papel and not pode_desativar %}
+        <p class="help">Sem ações disponíveis para esta conta.</p>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  <details class="um-new">
+    <summary>Novo usuário</summary>
+    <form method="post" action="/usuarios">
+      <div class="field">
+        <label class="lbl" for="um-novo-nome">Nome de usuário</label>
+        <input class="control" id="um-novo-nome" name="nome_usuario" type="text" required
+               autocapitalize="none" autocorrect="off" spellcheck="false" />
+        <p class="help">3 a 30 caracteres: minúsculas, números, ponto, hífen ou sublinhado.</p>
+      </div>
+      <div class="field">
+        <label class="lbl" for="um-novo-exib">Nome de exibição</label>
+        <input class="control" id="um-novo-exib" name="nome_exibicao" type="text" placeholder="opcional" />
+      </div>
+      <div class="field">
+        <label class="lbl" for="um-novo-senha">Senha</label>
+        <input class="control" id="um-novo-senha" name="senha" type="password" required minlength="6" autocomplete="new-password" />
+      </div>
+      <div class="field">
+        <label class="lbl" for="um-novo-papel">Papel</label>
+        <select class="control" id="um-novo-papel" name="papel">
+          <option value="comum" selected>Comum</option>
+          {% if pode_alterar_papel %}<option value="admin">Admin</option>{% endif %}
+        </select>
+      </div>
+      <button class="btn-primary um-full" type="submit">Criar usuário</button>
+    </form>
+  </details>
+</section>
 {% endblock %}

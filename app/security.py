@@ -60,6 +60,11 @@ LOGIN_MAX_FALHAS_IP = 20
 SETUP_TOKEN = os.environ.get("SALAO_SETUP_TOKEN") or None
 
 
+def impressao_senha(senha_hash: str) -> str:
+    """Guardada na sessão no login: trocar a senha derruba as sessões abertas."""
+    return hashlib.sha256(("salao-senha:" + senha_hash).encode()).hexdigest()[:16]
+
+
 def setup_token_valido(token: str | None) -> bool:
     if SETUP_TOKEN is None:
         # Local: setup livre. Em produção sem token configurado: fechado.
@@ -224,7 +229,11 @@ def usuario_atual(
         raise RedirectRequired("/login", htmx=htmx)
 
     usuario = obter_usuario_por_id(session, usuario_id)
-    if usuario is None or not usuario.ativo:
+    if (
+        usuario is None
+        or not usuario.ativo
+        or request.session.get("senha_fp") != impressao_senha(usuario.senha_hash)
+    ):
         request.session.clear()
         raise RedirectRequired("/login", htmx=htmx)
     return usuario

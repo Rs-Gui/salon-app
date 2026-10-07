@@ -10,6 +10,7 @@ from app.database import get_session
 from app.security import (
     existe_algum_usuario,
     hash_senha,
+    impressao_senha,
     ip_do_cliente,
     login_bloqueado,
     normalizar_nome_usuario,
@@ -30,6 +31,7 @@ def _iniciar_sessao(request: Request, usuario: Usuario) -> None:
     request.session.clear()
     request.session["usuario_id"] = usuario.id
     request.session["login_em"] = int(time.time())
+    request.session["senha_fp"] = impressao_senha(usuario.senha_hash)
     request.session["papel"] = usuario.papel
     request.session["nome_usuario"] = usuario.nome_usuario
     request.session["nome_exibicao"] = usuario.nome_exibicao or usuario.nome_usuario
@@ -107,7 +109,7 @@ def post_setup(
     usuario = Usuario(
         nome_usuario=nome,
         senha_hash=hash_senha(senha),
-        papel="admin",
+        papel="superadmin",
     )
     session.add(usuario)
     session.commit()
