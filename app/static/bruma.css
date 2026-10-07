@@ -745,16 +745,19 @@ body.bruma{
   .bruma .roster tbody tr,.bruma .roster tbody tr:first-child{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
   .bruma .roster tbody tr:hover{background:var(--surface)}
   .bruma .roster tbody tr.comanda-row:active{background:var(--surface-2)}
-  .bruma .roster td,.bruma .roster td.hide-sm{display:block;order:4;flex:1 1 100%;min-width:0;padding:0}
-  .bruma .roster td.c-titulo{order:1;flex:1 1 0;font-size:15px}
-  .bruma .roster td.c-valor{order:2;flex:0 0 auto;text-align:right}
-  .bruma .roster td.c-meta{order:3;font-size:12.5px;color:var(--ink-soft)}
+  .bruma .roster td,.bruma .roster td.hide-sm{display:block;order:5;flex:1 1 100%;min-width:0;padding:0}
+  /* 1ª linha: título (quebra palavra longa em vez de vazar) + valor */
+  .bruma .roster td.c-titulo{order:1;flex:1 1 0;font-size:15px;overflow-wrap:anywhere}
+  .bruma .roster td.c-valor{order:2;flex:0 1 auto;max-width:55%;text-align:right}
+  /* quebra de linha forçada: o resto do cartão sempre começa embaixo */
+  .bruma .roster tbody tr::before{content:"";order:3;flex:1 1 100%;height:0;margin-top:-6px}
+  .bruma .roster td.c-meta{order:4;font-size:12.5px;color:var(--ink-soft)}
   .bruma .roster td[data-label]{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13.5px;text-align:right}
   .bruma .roster td[data-label]::before{content:attr(data-label);color:var(--ink-soft);text-align:left;flex-shrink:0}
   /* td.c-chip[data-label]: info curta lado a lado sob o título ("Duração 60 min") */
-  .bruma .roster td.c-chip[data-label]{order:3;flex:0 0 auto;display:inline-flex;gap:5px;font-size:12.5px;color:var(--ink)}
+  .bruma .roster td.c-chip[data-label]{order:4;flex:0 0 auto;display:inline-flex;gap:5px;font-size:12.5px;color:var(--ink)}
   .bruma .roster td.c-chip[data-label] .dur,.bruma .roster td.c-chip[data-label] .price{color:var(--ink);font-weight:500}
-  .bruma .roster td.c-acoes{order:5;border-top:1px dashed var(--line);padding-top:10px;margin-top:4px}
+  .bruma .roster td.c-acoes{order:6;border-top:1px dashed var(--line);padding-top:10px;margin-top:4px}
   .bruma .roster td.c-ocultar,.bruma .roster td.c-vazio,.bruma .roster td.so-desk{display:none}
   /* cartão inteiro clicável (tr[data-href]) com seta à direita */
   .bruma .roster tbody tr[data-href]{cursor:pointer;padding-right:34px;position:relative}
@@ -763,9 +766,9 @@ body.bruma{
   .bruma .roster td[colspan]{text-align:center}
 
   /* ações das listas como botões de toque */
-  .bruma .acts{justify-content:flex-start;flex-wrap:wrap;gap:8px;white-space:normal}
+  .bruma .acts{justify-content:flex-start;flex-wrap:wrap;gap:6px;white-space:normal}
   .bruma .acts .sep,.bruma .acts .so-desk{display:none}
-  .bruma .acts a,.bruma .acts button{display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:14px}
+  .bruma .acts a,.bruma .acts button{flex:1 1 auto;display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:13.5px}
 
   /* formulários */
   .bruma .frame{max-width:none}
