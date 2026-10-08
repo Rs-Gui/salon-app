@@ -310,9 +310,14 @@
   var totalH = timeline ? (parseFloat(timeline.style.height) || 0) : 0;
 
   function scrollTo(top) {
-    if (!scroller) return;
     requestAnimationFrame(function () {
-      scroller.scrollTop = Math.max(0, top - scroller.clientHeight * 0.4);
+      // Celular: quem rola é a página (ver bruma.css); no desktop, o <main>.
+      if (window.innerWidth <= 760 && timeline) {
+        var base = timeline.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo(0, Math.max(0, base + top - window.innerHeight * 0.4));
+      } else if (scroller) {
+        scroller.scrollTop = Math.max(0, top - scroller.clientHeight * 0.4);
+      }
     });
   }
 

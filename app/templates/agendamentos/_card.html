@@ -22,6 +22,13 @@
       {% endfor %}
     {% else %}—{% endif %}
   </div>
+  {% if serie_pos or agendamento.encaixe %}
+  <div class="meta">
+    {%- if serie_pos %}<b>Recorrente:</b> {{ serie_pos }} de {{ serie_total }}{% endif -%}
+    {%- if serie_pos and agendamento.encaixe %} · {% endif -%}
+    {%- if agendamento.encaixe %}<b>Encaixe</b>{% endif -%}
+  </div>
+  {% endif %}
 </div>
 
 {% if erro %}
@@ -103,7 +110,14 @@
   {% if request.session.get('papel') in ('admin', 'superadmin') %}
   <form method="post" action="/agendamentos/{{ agendamento.id }}/excluir"
         onsubmit="return confirm('Excluir este agendamento?')">
-    <button type="submit" class="btn-danger">Excluir</button>
+    <button type="submit" class="btn-danger">Excluir{% if serie_restantes %} só este{% endif %}</button>
   </form>
+  {% if serie_restantes %}
+  <form method="post" action="/agendamentos/{{ agendamento.id }}/excluir"
+        onsubmit="return confirm('Excluir este agendamento e {{ 'o próximo' if serie_restantes == 1 else 'os ' ~ serie_restantes ~ ' próximos' }} desta série?')">
+    <input type="hidden" name="escopo" value="serie" />
+    <button type="submit" class="btn-danger">Excluir este e os próximos</button>
+  </form>
+  {% endif %}
   {% endif %}
 </div>

@@ -79,6 +79,7 @@ _COLUNAS_NOVAS = (
     ("servico", "comissao_pct", "FLOAT NOT NULL DEFAULT 0"),
     ("lancamentofinanceiro", "comissao_pct", "FLOAT"),
     ("agendamento", "encaixe", "BOOLEAN NOT NULL DEFAULT FALSE"),
+    ("agendamento", "serie_id", "VARCHAR(32)"),
 )
 
 

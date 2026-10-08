@@ -1,0 +1,21 @@
+{# Fragmento HTMX — resumo da criação de agendamento recorrente quando alguma
+   data foi pulada (conflito de horário, fora do expediente…). NÃO extends base. #}
+<div class="cmd-head">
+  <div class="cmd-eyebrow">Agendamento recorrente</div>
+  <h2 class="serif">{{ criadas }} agendamento{{ 's' if criadas != 1 }} criado{{ 's' if criadas != 1 }}</h2>
+  <div class="meta">{{ puladas | length }} data{{ 's' if puladas | length != 1 }} não {{ 'puderam' if puladas | length != 1 else 'pôde' }} ser marcada{{ 's' if puladas | length != 1 }} — remarque à mão se quiser.</div>
+</div>
+
+<div class="cmd-seclbl">Datas puladas</div>
+<div>
+  {% for p in puladas %}
+  <div class="comr">
+    <div class="d">{{ p.data }}</div>
+    <div class="s"><div class="cl" style="white-space:normal">{{ p.motivo }}</div></div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="cmd-foot">
+  <button type="button" class="btn-primary" style="margin-left:auto" onclick="location.reload()">Ok, ver agenda</button>
+</div>

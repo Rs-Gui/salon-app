@@ -1,3 +1,5 @@
+import calendar
+import uuid
 from datetime import date, datetime, timedelta
 from types import SimpleNamespace
 from typing import List, Optional
@@ -255,6 +257,63 @@ def _conflita_para_profissional(
         if cand.data_hora < fim and fim_cand > inicio:
             return cand
     return None
+
+
+def _info_serie(session: Session, ag: Agendamento) -> dict:
+    """Posição do agendamento na série recorrente (p/ o card): {} se avulso."""
+    if not ag.serie_id:
+        return {"serie_pos": None, "serie_total": None, "serie_restantes": 0}
+    ids = session.exec(
+        select(Agendamento.id)
+        .where(Agendamento.serie_id == ag.serie_id)
+        .order_by(Agendamento.data_hora, Agendamento.id)
+    ).all()
+    pos = ids.index(ag.id) + 1 if ag.id in ids else None
+    return {
+        "serie_pos": pos,
+        "serie_total": len(ids),
+        "serie_restantes": len(ids) - pos if pos else 0,
+    }
+
+
+def _resolve_cliente_novo(session: Session, nome: str) -> Optional[int]:
+    """Nome digitado no campo Cliente sem escolher ninguém da lista: usa o
+    cliente com esse nome (sem diferenciar maiúsculas) ou cadastra um novo."""
+    nome = " ".join((nome or "").split())[:200]
+    if not nome:
+        return None
+    existentes = [
+        c for c in session.exec(select(Cliente)).all()
+        if (c.nome or "").strip().lower() == nome.lower()
+    ]
+    if existentes:
+        existentes.sort(key=lambda c: (not c.ativo, c.id))
+        return existentes[0].id
+    cliente = Cliente(nome=nome)
+    session.add(cliente)
+    session.flush()
+    return cliente.id
+
+
+# Repetir: chave do form -> intervalo em dias ("mes" = mesmo dia do mês).
+_REPETICOES = {"7": 7, "14": 14, "21": 21, "28": 28, "mes": None}
+_REPETICOES_MAX = 52
+
+
+def _datas_da_serie(inicio: datetime, repetir: str, vezes: int) -> List[datetime]:
+    """Datas das ocorrências seguintes à primeira (vezes = total, incluindo ela).
+    Mensal: mesmo dia; se o mês não tiver esse dia, usa o último dia do mês."""
+    datas = []
+    passo = _REPETICOES[repetir]
+    for i in range(1, vezes):
+        if passo is not None:
+            datas.append(inicio + timedelta(days=passo * i))
+        else:
+            mes0 = inicio.month - 1 + i
+            ano, mes = inicio.year + mes0 // 12, mes0 % 12 + 1
+            dia = min(inicio.day, calendar.monthrange(ano, mes)[1])
+            datas.append(inicio.replace(year=ano, month=mes, day=dia))
+    return datas
 
 
 def _distribui_faixas(blocos: list) -> list:
@@ -800,6 +859,7 @@ def _render_card(
         "erro": erro,
     }
     contexto.update(_info_pagamento(session, ag.id))
+    contexto.update(_info_serie(session, ag))
     return templates.TemplateResponse(
         "agendamentos/_card.html",
         contexto,
@@ -837,6 +897,9 @@ def criar(
     profissional_ids: List[str] = Form(default=[]),
     servico_ids: List[str] = Form(default=[]),
     encaixe: str = Form(""),
+    cliente_novo: str = Form(""),
+    repetir: str = Form(""),
+    repeticoes: str = Form(""),
     session: Session = Depends(get_session),
 ):
     prof_ids = _parse_ids_lista(profissional_ids)
@@ -848,6 +911,11 @@ def criar(
     if obs is not None and len(obs) > 2000:
         obs = obs[:2000]
     eh_encaixe = bool(encaixe)
+    repetir = repetir if repetir in _REPETICOES else ""
+    try:
+        vezes = int(repeticoes)
+    except (TypeError, ValueError):
+        vezes = 0
 
     erro, _fim, _dur = _validar_agendamento(
         session,
@@ -858,6 +926,8 @@ def criar(
         modo="criar",
         encaixe=eh_encaixe,
     )
+    if erro is None and repetir and not (2 <= vezes <= _REPETICOES_MAX):
+        erro = f"Informe quantas vezes repetir (de 2 a {_REPETICOES_MAX})."
 
     if erro:
         agendamento_mem = Agendamento(
@@ -883,24 +953,64 @@ def criar(
             profissional_ids_default=prof_ids,
             servico_ids_default=serv_ids,
         )
+        contexto.update(
+            cliente_novo_default=(cliente_novo or "").strip(),
+            repetir_default=repetir,
+            repeticoes_default=repeticoes.strip() if repeticoes else "",
+        )
         return templates.TemplateResponse(
             "agendamentos/_form_modal.html",
             contexto,
             status_code=400,
         )
 
-    ag = Agendamento(
-        data_hora=data_hora,
-        cliente_id=cli_id,
-        duracao_override=dur_override,
-        observacoes=obs,
-        encaixe=eh_encaixe,
-    )
-    session.add(ag)
-    session.flush()  # garante ag.id
-    _substitui_links(session, ag.id, prof_ids, serv_ids)
+    if cli_id is None:
+        cli_id = _resolve_cliente_novo(session, cliente_novo)
+
+    serie_id = uuid.uuid4().hex if repetir else None
+
+    def _cria(quando: datetime) -> None:
+        ag = Agendamento(
+            data_hora=quando,
+            cliente_id=cli_id,
+            duracao_override=dur_override,
+            observacoes=obs,
+            encaixe=eh_encaixe,
+            serie_id=serie_id,
+        )
+        session.add(ag)
+        session.flush()  # garante ag.id
+        _substitui_links(session, ag.id, prof_ids, serv_ids)
+
+    _cria(data_hora)
+
+    # Repetir: cada data passa pela mesma validação; conflito/fora do horário
+    # é pulado e listado no resumo (as datas livres são criadas).
+    puladas = []
+    criadas = 1
+    for quando in _datas_da_serie(data_hora, repetir, vezes) if repetir else []:
+        erro_i, _f, _d = _validar_agendamento(
+            session,
+            profissional_ids=prof_ids,
+            servico_ids=serv_ids,
+            data_hora=quando,
+            duracao_override=dur_override,
+            modo="criar",
+            encaixe=eh_encaixe,
+        )
+        if erro_i:
+            puladas.append({"data": quando.strftime("%d/%m/%Y"), "motivo": erro_i})
+        else:
+            _cria(quando)
+            criadas += 1
     session.commit()
-    return Response(status_code=204, headers={"HX-Refresh": "true"})
+
+    if not puladas:
+        return Response(status_code=204, headers={"HX-Refresh": "true"})
+    return templates.TemplateResponse(
+        "agendamentos/_recorrencia_resumo.html",
+        {"request": request, "criadas": criadas, "puladas": puladas},
+    )
 
 
 @router.post("/{agendamento_id}")
@@ -915,6 +1025,7 @@ def atualizar(
     profissional_ids: List[str] = Form(default=[]),
     servico_ids: List[str] = Form(default=[]),
     encaixe: str = Form(""),
+    cliente_novo: str = Form(""),
     session: Session = Depends(get_session),
 ):
     ag = session.get(Agendamento, agendamento_id)
@@ -966,12 +1077,15 @@ def atualizar(
             profissional_ids_default=prof_ids,
             servico_ids_default=serv_ids,
         )
+        contexto["cliente_novo_default"] = (cliente_novo or "").strip()
         return templates.TemplateResponse(
             "agendamentos/form_edit.html",
             contexto,
             status_code=400,
         )
 
+    if cli_id is None:
+        cli_id = _resolve_cliente_novo(session, cliente_novo)
     ag.data_hora = data_hora
     ag.cliente_id = cli_id
     ag.duracao_override = dur_override
@@ -1070,9 +1184,23 @@ def atualizar_duracao(
     return Response(status_code=204, headers={"HX-Refresh": "true"})
 
 
+def _excluir_agendamento(session: Session, ag: Agendamento) -> None:
+    # Estorna o pagamento (se houver): remove lançamentos e devolve estoque das
+    # vendas vinculadas — senão sobrariam receitas órfãs apontando p/ agendamento inexistente.
+    _estornar_pagamento(session, ag.id)
+
+    # Deleta links primeiro
+    for modelo in (AgendamentoServico, AgendamentoProfissional):
+        for l in session.exec(select(modelo).where(modelo.agendamento_id == ag.id)).all():
+            session.delete(l)
+    session.flush()
+    session.delete(ag)
+
+
 @router.post("/{agendamento_id}/excluir")
 def excluir(
     agendamento_id: int,
+    escopo: str = Form("este"),
     session: Session = Depends(get_session),
     _ator: Usuario = Depends(requer_admin),
 ):
@@ -1087,27 +1215,16 @@ def excluir(
 
     data_str = ag.data_hora.strftime("%Y-%m-%d")
 
-    # Estorna o pagamento (se houver): remove lançamentos e devolve estoque das
-    # vendas vinculadas — senão sobrariam receitas órfãs apontando p/ agendamento inexistente.
-    _estornar_pagamento(session, ag.id)
-
-    # Deleta links primeiro
-    links_serv = session.exec(
-        select(AgendamentoServico).where(
-            AgendamentoServico.agendamento_id == ag.id
-        )
-    ).all()
-    for l in links_serv:
-        session.delete(l)
-    links_prof = session.exec(
-        select(AgendamentoProfissional).where(
-            AgendamentoProfissional.agendamento_id == ag.id
-        )
-    ).all()
-    for l in links_prof:
-        session.delete(l)
-    session.flush()
-    session.delete(ag)
+    # escopo="serie": este e os próximos da mesma série recorrente.
+    alvos = [ag]
+    if escopo == "serie" and ag.serie_id:
+        alvos = session.exec(
+            select(Agendamento)
+            .where(Agendamento.serie_id == ag.serie_id)
+            .where(Agendamento.data_hora >= ag.data_hora)
+        ).all()
+    for alvo in alvos:
+        _excluir_agendamento(session, alvo)
     session.commit()
 
     return RedirectResponse(url=f"/agendamentos/?data={data_str}", status_code=303)

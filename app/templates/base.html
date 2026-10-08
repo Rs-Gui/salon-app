@@ -46,7 +46,7 @@
         inputName: opts.inputName,
         mostrarDuracao: !!opts.mostrarDuracao,
         single: !!opts.single,
-        busca: '',
+        busca: opts.busca || '',
         aberto: false,
         _onChange: typeof opts.onChange === 'function' ? opts.onChange : null,
         init() {
@@ -94,6 +94,16 @@
             if (!b) return true;
             return it.nomeLower.includes(b);
           });
+        },
+        // Cliente (single): texto digitado sem escolher ninguém da lista vira
+        // "cliente_novo" no POST — o backend usa o de mesmo nome ou cadastra.
+        get novoNome() {
+          if (!this.single || this.selecionados.length) return '';
+          return (this.busca || '').trim();
+        },
+        get ehNovo() {
+          const b = this.novoNome.toLowerCase();
+          return !!b && !this.catalogo.some(function (it) { return it.nomeLower === b; });
         },
         get sugestao() {
           if (!this.mostrarDuracao) return '—';

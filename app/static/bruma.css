@@ -289,7 +289,7 @@ body.bruma{
 .bruma .ag-sec .control.mini{width:auto;max-width:150px}
 .bruma .btn-sm{display:inline-flex;align-items:center;background:var(--graphite);color:#fff;border:none;border-radius:9px;padding:8px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
 .bruma .btn-sm:hover{background:#222225}
-.bruma .ag-foot{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:16px;border-top:1px solid var(--line-soft)}
+.bruma .ag-foot{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-top:18px;padding-top:16px;border-top:1px solid var(--line-soft)}
 .bruma .ag-foot a{color:var(--ink-soft);font-size:13.5px;font-weight:500;text-decoration:none}
 .bruma .ag-foot a:hover{color:var(--ink)}
 
@@ -603,7 +603,7 @@ body.bruma{
   .bruma .agenda-mobile{display:flex;flex-direction:column;flex:1;min-height:0}
 
   /* controles fixos no topo do scroll (data + chips) */
-  .bruma .m-controls{position:sticky;top:0;z-index:8;background:var(--bg);border-bottom:1px solid var(--line)}
+  .bruma .m-controls{position:sticky;top:var(--topbar-h);z-index:8;background:var(--bg);border-bottom:1px solid var(--line)}
   .bruma .m-datebar{display:flex;align-items:center;gap:10px;padding:12px 16px 10px}
   .bruma .m-daynav{width:42px;height:42px;border-radius:13px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--ink);font-size:18px;text-decoration:none;flex-shrink:0}
   .bruma .m-daynav:active{background:var(--surface-2)}
@@ -720,7 +720,13 @@ body.bruma{
    - inputs com 16px (evita o zoom automático do iPhone).
    =========================================================== */
 @media (max-width:760px){
-  body.bruma{height:100dvh}
+  /* Celular: quem rola é a própria página (não o <main>). Altura fixa de
+     viewport (100vh/100dvh) é calculada errada no 1º carregamento do app
+     instalado no Android e o fim da página ficava inalcançável. */
+  body.bruma{height:auto;min-height:100%;overflow:visible;display:block;--topbar-h:65px}
+  .bruma header.topbar{position:sticky;top:0;z-index:40;background:rgba(244,244,243,.96);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  .bruma .shell{display:block}
+  .bruma main.content{overflow:visible;display:block}
   .bruma main.content{padding:18px 16px calc(28px + env(safe-area-inset-bottom))}
 
   /* cabeçalho de página */

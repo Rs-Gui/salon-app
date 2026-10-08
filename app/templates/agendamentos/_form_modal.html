@@ -107,6 +107,7 @@
         catalogo: {{ clientes_json|tojson }},
         selecionados: {{ ([cliente_selecionado_id] if cliente_selecionado_id else [])|tojson }},
         inputName: "cliente_id",
+        busca: {{ (cliente_novo_default|default(""))|tojson }},
         mostrarDuracao: false,
         single: true
       })'>
@@ -121,7 +122,7 @@
         </template>
       </div>
       <div class="ms-field" @click.away="aberto=false">
-        <input type="text" x-model="busca" @focus="aberto=true" placeholder="Buscar cliente..." />
+        <input type="text" x-model="busca" @focus="aberto=true" placeholder="Buscar ou digitar nome do cliente..." />
         <div class="ms-drop" x-show="aberto && filtrados.length" x-cloak>
           <template x-for="item in filtrados" :key="item.id">
             <div class="ms-opt" @mousedown.prevent="adicionar(item.id)" x-text="rotulo(item.id)"></div>
@@ -130,6 +131,8 @@
       </div>
     </div>
     <input type="hidden" name="cliente_id" :value="selecionados[0] || ''" />
+    <input type="hidden" name="cliente_novo" :value="novoNome" />
+    <p class="help" x-show="ehNovo" x-cloak>Cliente novo: <b x-text="novoNome"></b> será cadastrado(a) ao salvar.</p>
   </div>
 
   {# ---------- Duração ---------- #}
@@ -142,6 +145,25 @@
       Sugerido pelos serviços: <span x-text="$store.agServicos.sugestao"></span> min.
       Deixe vazio para usar o valor calculado.
     </p>
+  </div>
+
+  {# ---------- Repetir (agendamento recorrente) ---------- #}
+  <div class="field" x-data='{ repetir: {{ (repetir_default|default(""))|tojson }} }'>
+    <label class="lbl" for="repetir">Repetir</label>
+    <select class="control" id="repetir" name="repetir" x-model="repetir">
+      <option value="">Não repete</option>
+      <option value="7">Toda semana</option>
+      <option value="14">A cada 2 semanas</option>
+      <option value="21">A cada 3 semanas</option>
+      <option value="28">A cada 4 semanas</option>
+      <option value="mes">Todo mês</option>
+    </select>
+    <div x-show="repetir" x-cloak style="margin-top:12px">
+      <label class="lbl" for="repeticoes">Quantas vezes, contando esta</label>
+      <input class="control" id="repeticoes" type="number" name="repeticoes" min="2" max="52"
+             inputmode="numeric" value="{{ repeticoes_default|default('', true) or '4' }}" />
+      <p class="help">Mesmo horário, profissionais e serviços. Datas em que a profissional já estiver ocupada são puladas e avisadas no fim.</p>
+    </div>
   </div>
 
   {# ---------- Encaixe ---------- #}

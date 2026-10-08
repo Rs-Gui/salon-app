@@ -122,6 +122,7 @@
             catalogo: {{ clientes_json|tojson }},
             selecionados: {{ ([cliente_selecionado_id] if cliente_selecionado_id else [])|tojson }},
             inputName: "cliente_id",
+            busca: {{ (cliente_novo_default|default(""))|tojson }},
             mostrarDuracao: false,
             single: true
           })'>
@@ -136,7 +137,7 @@
             </template>
           </div>
           <div class="ms-field" @click.away="aberto=false">
-            <input type="text" x-model="busca" @focus="aberto=true" placeholder="Buscar cliente..." />
+            <input type="text" x-model="busca" @focus="aberto=true" placeholder="Buscar ou digitar nome do cliente..." />
             <div class="ms-drop" x-show="aberto && filtrados.length" x-cloak>
               <template x-for="item in filtrados" :key="item.id">
                 <div class="ms-opt" @mousedown.prevent="adicionar(item.id)" x-text="rotulo(item.id)"></div>
@@ -145,6 +146,8 @@
           </div>
         </div>
         <input type="hidden" name="cliente_id" :value="selecionados[0] || ''" />
+        <input type="hidden" name="cliente_novo" :value="novoNome" />
+        <p class="help" x-show="ehNovo" x-cloak>Cliente novo: <b x-text="novoNome"></b> será cadastrado(a) ao salvar.</p>
       </div>
 
       {# ---------- Duração ---------- #}
