@@ -86,9 +86,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>
         Pago · R$ {{ total_pago|brl }}
       </span>
+      {# hx-confirm: o HTMX ignora "return confirm()" no onsubmit e enviava mesmo com Cancelar. #}
       <form hx-post="/agendamentos/{{ agendamento.id }}/pagamento/estornar"
             hx-target="#modal-content" hx-swap="innerHTML"
-            onsubmit="return confirm('Estornar o pagamento? As vendas de produtos voltam ao estoque.')">
+            hx-confirm="Estornar o pagamento? As vendas de produtos voltam ao estoque.">
         <button type="submit" class="btn-danger">Estornar pagamento</button>
       </form>
     </div>

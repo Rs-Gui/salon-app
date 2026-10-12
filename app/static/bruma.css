@@ -294,7 +294,7 @@ body.bruma{
 .bruma .ag-foot a:hover{color:var(--ink)}
 
 /* ---------- telas de acesso (login / setup) ---------- */
-.bruma.auth{justify-content:center;align-items:center;height:auto;min-height:100vh;overflow:auto;padding:32px 20px}
+.bruma.auth{justify-content:center;align-items:center;height:auto;min-height:100vh;min-height:100svh;overflow:auto;padding:32px 20px}
 .bruma .auth-card{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:34px 32px;text-align:center}
 .bruma .auth-card .field{text-align:left}
 .bruma .auth-card label.lbl{text-align:center}
@@ -723,7 +723,7 @@ body.bruma{
   /* Celular: quem rola é a própria página (não o <main>). Altura fixa de
      viewport (100vh/100dvh) é calculada errada no 1º carregamento do app
      instalado no Android e o fim da página ficava inalcançável. */
-  body.bruma{height:auto;min-height:100%;overflow:visible;display:block;--topbar-h:65px}
+  body.bruma:not(.auth){height:auto;min-height:100%;overflow:visible;display:block;--topbar-h:65px}
   .bruma header.topbar{position:sticky;top:0;z-index:40;background:rgba(244,244,243,.96);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
   .bruma .shell{display:block}
   .bruma main.content{overflow:visible;display:block}
